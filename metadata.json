@@ -1,0 +1,6 @@
+{
+  "name": "Classarium",
+  "description": "A complete, production-ready, multi-tenant School Operating System (SOS) and SaaS platform with secure tenant isolation, granular role permissions, automated result compiled report cards, interactive CBT testing, and real-time chat modules.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
