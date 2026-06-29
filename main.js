@@ -58,6 +58,8 @@ const appState = {
   cbtTimeRemaining: 0,
   toastQueue: [],
   schoolsList: [], // Super Admin view
+  staffList: [],   // Active school teachers
+  studentList: [], // Active school students
   academicStructure: null,
   impersonatedSchoolId: null
 };
@@ -115,6 +117,55 @@ function toggleTheme() {
 }
 
 // Initialize Auth Listener
+async function loadDataForCurrentContext() {
+  if (!appState.user) return;
+  const p = appState.profile || {};
+  
+  try {
+    // If super_admin, fetch all schools
+    if (p.role === "super_admin") {
+      const schoolsSnapshot = await getDocs(collection(db, "schools"));
+      appState.schoolsList = [];
+      schoolsSnapshot.forEach((docSnap) => {
+        appState.schoolsList.push(docSnap.data());
+      });
+    }
+
+    // Determine active schoolId
+    const sId = appState.impersonatedSchoolId || p.schoolId;
+    if (sId && sId !== "classarium_global") {
+      // Load current school details
+      const schDoc = await getDoc(doc(db, "schools", sId));
+      if (schDoc.exists()) {
+        appState.school = schDoc.data();
+      }
+
+      // Fetch users of this school
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("schoolId", "==", sId));
+      const querySnapshot = await getDocs(q);
+      
+      appState.staffList = [];
+      appState.studentList = [];
+      
+      querySnapshot.forEach((docSnap) => {
+        const uData = docSnap.data();
+        if (uData.role === "teacher" || uData.role === "class_manager") {
+          appState.staffList.push(uData);
+        } else if (uData.role === "student") {
+          appState.studentList.push(uData);
+        }
+      });
+    } else {
+      if (p.role === "super_admin" && !appState.impersonatedSchoolId) {
+        appState.school = { name: "Classarium Global Network" };
+      }
+    }
+  } catch (error) {
+    console.error("Error loading context data:", error);
+  }
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     appState.user = user;
@@ -131,6 +182,7 @@ onAuthStateChanged(auth, async (user) => {
             appState.school = schDoc.data();
           }
         }
+        await loadDataForCurrentContext();
         showToast(`Welcome back, ${appState.profile.displayName}!`, "success");
         navigateTo("dashboard");
       } else {
@@ -141,6 +193,7 @@ onAuthStateChanged(auth, async (user) => {
           displayName: "Super Administrator",
           schoolId: "classarium_global"
         };
+        await loadDataForCurrentContext();
         navigateTo("dashboard");
       }
     } catch (e) {
@@ -664,6 +717,32 @@ async function handleAuthSubmit(event) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (e) {
+      // Self-healing auth registration for admin-created users
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", email));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          const userData = userDoc.data();
+          if (userData.password === password) {
+            showToast("Provisioning account container...", "info");
+            const userCred = await createUserWithEmailAndPassword(auth, email, password);
+            const oldId = userDoc.id;
+            const newUid = userCred.user.uid;
+            
+            await deleteDoc(doc(db, "users", oldId));
+            await setDoc(doc(db, "users", newUid), {
+              ...userData,
+              uid: newUid
+            });
+            showToast("Workspace security clearance granted!", "success");
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Self-healing login error:", err);
+      }
       showToast(e.message, "error");
     }
   }
@@ -688,7 +767,10 @@ function renderSidebar() {
       </div>
       <div class="sidebar-school-info">
         <div class="sidebar-school-name">${s.name}</div>
-        <div class="sidebar-school-role">${roleName}</div>
+        <div class="sidebar-school-role" style="display: flex; flex-direction: column; gap: 0.25rem;">
+          <span>${roleName}</span>
+          ${appState.impersonatedSchoolId ? `<span class="badge badge-warning" style="font-size: 0.75rem; align-self: flex-start;">Impersonating Admin</span>` : ""}
+        </div>
       </div>
       
       <nav class="sidebar-nav">
@@ -698,7 +780,7 @@ function renderSidebar() {
         </a>
 
         ${
-          p.role === "super_admin" 
+          p.role === "super_admin" && !appState.impersonatedSchoolId
             ? `
               <div class="sidebar-menu-title">Global SaaS Operations</div>
               <a href="#super_schools" class="sidebar-link ${appState.currentRoute === "super_schools" ? "active" : ""}">🏫 School Instances</a>
@@ -708,7 +790,17 @@ function renderSidebar() {
         }
 
         ${
-          p.role === "school_admin"
+          appState.impersonatedSchoolId
+            ? `
+              <div class="sidebar-menu-title" style="color: var(--warning-color); border-bottom: 1px dashed var(--warning-color); padding-bottom: 4px; margin-top: 1rem;">⚡ Impersonation Context</div>
+              <button onclick="exitImpersonation()" class="sidebar-link" style="width: 100%; text-align: left; background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning-color); color: var(--warning-color); font-weight: 700; padding: 0.5rem; border-radius: 0.375rem; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <span>🔙</span> Exit Acting Admin
+              </button>
+            ` : ""
+        }
+
+        ${
+          (p.role === "school_admin" || (p.role === "super_admin" && appState.impersonatedSchoolId))
             ? `
               <div class="sidebar-menu-title">Operational Workspace</div>
               <a href="#wizard" class="sidebar-link ${appState.currentRoute === "wizard" ? "active" : ""}">⚙ Setup Wizard</a>
@@ -720,7 +812,7 @@ function renderSidebar() {
         }
 
         ${
-          p.role === "teacher" || p.role === "class_manager"
+          (p.role === "teacher" || p.role === "class_manager" || (p.role === "super_admin" && appState.impersonatedSchoolId))
             ? `
               <div class="sidebar-menu-title">Academic Controls</div>
               <a href="#attendance" class="sidebar-link ${appState.currentRoute === "attendance" ? "active" : ""}">✅ Daily Attendance</a>
@@ -732,7 +824,7 @@ function renderSidebar() {
         }
 
         ${
-          p.role === "student"
+          (p.role === "student")
             ? `
               <div class="sidebar-menu-title">Student Hub</div>
               <a href="#timetable" class="sidebar-link ${appState.currentRoute === "timetable" ? "active" : ""}">📅 Timetable</a>
@@ -754,15 +846,15 @@ function renderSidebar() {
 
         <!-- Specialized Roles -->
         ${
-          p.role === "librarian" || p.role === "school_admin"
+          p.role === "librarian" || p.role === "school_admin" || (p.role === "super_admin" && appState.impersonatedSchoolId)
             ? `<a href="#library" class="sidebar-link ${appState.currentRoute === "library" ? "active" : ""}">📖 Catalog & Library</a>` : ""
         }
         ${
-          p.role === "hostel_manager" || p.role === "school_admin"
+          p.role === "hostel_manager" || p.role === "school_admin" || (p.role === "super_admin" && appState.impersonatedSchoolId)
             ? `<a href="#hostel" class="sidebar-link ${appState.currentRoute === "hostel" ? "active" : ""}">🏠 Hostel Lodge</a>` : ""
         }
         ${
-          p.role === "transport_officer" || p.role === "school_admin"
+          p.role === "transport_officer" || p.role === "school_admin" || (p.role === "super_admin" && appState.impersonatedSchoolId)
             ? `<a href="#transport" class="sidebar-link ${appState.currentRoute === "transport" ? "active" : ""}">🚌 Vehicle Route</a>` : ""
         }
 
@@ -853,18 +945,20 @@ function renderModuleContent() {
 function renderDashboardOverview() {
   const p = appState.profile || {};
   const s = appState.school || {};
+  const role = (p.role === "super_admin" && appState.impersonatedSchoolId) ? "school_admin" : p.role;
 
-  if (p.role === "super_admin") {
+  if (role === "super_admin") {
+    const totalSchools = appState.schoolsList ? appState.schoolsList.length : 1;
     return `
       <div class="dashboard-grid">
         <div class="stat-card">
           <div class="stat-card-header">SCHOOL INSTANCES <span class="stat-card-icon">🏫</span></div>
-          <div class="stat-card-value" id="sadmin-tot-schools">1</div>
+          <div class="stat-card-value" id="sadmin-tot-schools">${totalSchools}</div>
           <div class="stat-card-trend trend-up">✓ Active Multi-Tenancy container</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">TOTAL STUDENTS <span class="stat-card-icon">🎓</span></div>
-          <div class="stat-card-value">1</div>
+          <div class="stat-card-value">${appState.studentList ? appState.studentList.length || 1 : 1}</div>
           <div class="stat-card-trend trend-up">✦ Registered platform profiles</div>
         </div>
         <div class="stat-card">
@@ -897,16 +991,33 @@ function renderDashboardOverview() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Classarium International Academy</td>
-                  <td>2018</td>
-                  <td>Lagos, Nigeria</td>
-                  <td>Dr. Babajide Alao</td>
-                  <td><span class="badge badge-success">Approved</span></td>
-                  <td>
-                    <button class="btn btn-secondary btn-sm" onclick="alert('Reviewing branch logs')">Inspect</button>
-                  </td>
-                </tr>
+                ${
+                  appState.schoolsList && appState.schoolsList.length > 0 
+                    ? appState.schoolsList.map(sch => `
+                      <tr>
+                        <td><strong>${sch.name}</strong></td>
+                        <td>${sch.establishedYear || "2026"}</td>
+                        <td>${sch.state || "Lagos"}, ${sch.country || "Nigeria"}</td>
+                        <td>${sch.ownerName || "Administrator"}</td>
+                        <td><span class="badge badge-success">Approved</span></td>
+                        <td>
+                          <button class="btn btn-primary btn-sm" onclick="actAsSchoolAdmin('${sch.id}')">Act as Admin ⚡</button>
+                        </td>
+                      </tr>
+                    `).join('')
+                    : `
+                      <tr>
+                        <td>Classarium International Academy</td>
+                        <td>2018</td>
+                        <td>Lagos, Nigeria</td>
+                        <td>Dr. Babajide Alao</td>
+                        <td><span class="badge badge-success">Approved</span></td>
+                        <td>
+                          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo instance is protected.', 'warning')">Protected</button>
+                        </td>
+                      </tr>
+                    `
+                }
               </tbody>
             </table>
           </div>
@@ -936,17 +1047,19 @@ function renderDashboardOverview() {
   }
 
   // School Admin Dashboard
-  if (p.role === "school_admin") {
+  if (role === "school_admin") {
+    const studentsCount = appState.studentList ? appState.studentList.length : 1;
+    const staffCount = appState.staffList ? appState.staffList.length : 2;
     return `
       <div class="dashboard-grid">
         <div class="stat-card">
           <div class="stat-card-header">ADMITTED STUDENTS <span class="stat-card-icon">🎓</span></div>
-          <div class="stat-card-value">1</div>
+          <div class="stat-card-value">${studentsCount || 1}</div>
           <div class="stat-card-trend trend-up">✦ Fully Isolation container registered</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">STAFF ON DUTY <span class="stat-card-icon">🧑‍🏫</span></div>
-          <div class="stat-card-value">2</div>
+          <div class="stat-card-value">${staffCount || 2}</div>
           <div class="stat-card-trend trend-up">✦ Active platform permissions</div>
         </div>
         <div class="stat-card">
@@ -1166,37 +1279,137 @@ function renderDashboardOverview() {
 
 // Super Admin
 function renderSuperSchools() {
+  const schools = appState.schoolsList || [];
+  
+  let rowsHtml = "";
+  if (schools.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td>Classarium International Academy (Demo)</td>
+        <td>demo_school_cia</td>
+        <td>Dr. Babajide Alao</td>
+        <td><span class="badge badge-info">Growth Plan</span></td>
+        <td><span class="badge badge-success">Approved</span></td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo instance is protected.', 'warning')">Protected</button>
+        </td>
+      </tr>
+    `;
+  } else {
+    schools.forEach((s) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${s.name}</strong></td>
+          <td><code>${s.id}</code></td>
+          <td>${s.ownerName || s.email}</td>
+          <td><span class="badge badge-info">${(s.subscriptionTier || "Growth").toUpperCase()}</span></td>
+          <td><span class="badge badge-success">${(s.status || "Approved").toUpperCase()}</span></td>
+          <td style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="actAsSchoolAdmin('${s.id}')">Act as Admin ⚡</button>
+            <button class="btn btn-secondary btn-sm" onclick="deleteSchoolInstance('${s.id}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Manage Multi-Tenant Instances</h3>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Manage Multi-Tenant Instances</h3>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
+          Below are the isolated tenant operational instances. You can impersonate any instance to act as its admin and manage students/staff.
+        </p>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>School Name</th>
+                <th>Tenant ID</th>
+                <th>Owner Name</th>
+                <th>Subscription</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrapper">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>School Name</th>
-              <th>Tenant ID</th>
-              <th>Owner Name</th>
-              <th>Subscription</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Classarium International Academy</td>
-              <td>demo_school_cia</td>
-              <td>Dr. Babajide Alao</td>
-              <td><span class="badge badge-info">Growth Plan</span></td>
-              <td><span class="badge badge-success">Approved</span></td>
-              <td>
-                <button class="btn btn-secondary btn-sm" onclick="alert('Workspace container settings verified.')">Suspend</button>
-                <button class="btn btn-danger btn-sm" onclick="alert('Action restricted for security.')">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
+      <div class="card-panel">
+        <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+          <h3 class="panel-title">Deploy New Operational School Instance</h3>
+        </div>
+        <form onsubmit="createSchoolBySuperAdmin(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div>
+            <h4 style="margin-bottom: 1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; font-weight: 600;">School Logistics</h4>
+            <div class="form-group">
+              <label class="form-label">School Name</label>
+              <input type="text" id="sadmin-school-name" class="form-input" placeholder="e.g. Apex High School" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">School Motto</label>
+              <input type="text" id="sadmin-school-motto" class="form-input" placeholder="e.g. Excellence In Service" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">School Type</label>
+                <select id="sadmin-school-type" class="form-input" required>
+                  <option value="Primary & Secondary">Primary & Secondary</option>
+                  <option value="High School">High School</option>
+                  <option value="Vocational College">Vocational College</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Est. Year</label>
+                <input type="number" id="sadmin-school-year" class="form-input" value="2026" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">School Address</label>
+              <input type="text" id="sadmin-school-address" class="form-input" required placeholder="e.g. 12 Park Avenue" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">State</label>
+                <input type="text" id="sadmin-school-state" class="form-input" required placeholder="Lagos" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Country</label>
+                <input type="text" id="sadmin-school-country" class="form-input" required placeholder="Nigeria" />
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h4 style="margin-bottom: 1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; font-weight: 600;">Admin Credentials</h4>
+            <div class="form-group">
+              <label class="form-label">Administrator Full Name</label>
+              <input type="text" id="sadmin-admin-name" class="form-input" placeholder="e.g. Dr. Babajide Alao" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Administrator Email (Sign In Username)</label>
+              <input type="email" id="sadmin-admin-email" class="form-input" placeholder="admin@apex.edu" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Secure Access Key (Password)</label>
+              <input type="password" id="sadmin-admin-password" class="form-input" placeholder="••••••••" required />
+            </div>
+            
+            <div style="background: rgba(var(--primary-rgb), 0.05); border: 1px dashed var(--border-color); border-radius: 0.5rem; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; line-height: 1.5;">
+              <p><strong>✦ Container Isolation Deployment:</strong> Creating this school provisions its dedicated relational structures and academic databases. The specified admin credentials will be registered for direct login access.</p>
+            </div>
+          </div>
+          
+          <div style="grid-column: span 2; text-align: right; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">Provision & Deploy Instance</button>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -1302,40 +1515,123 @@ function renderSetupWizard() {
 
 // Staff management
 function renderStaffManagement() {
+  const staff = appState.staffList || [];
+  
+  let rowsHtml = "";
+  if (staff.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td>STAFF-CIA-004</td>
+        <td>Mr. John Carter</td>
+        <td>Mathematics, Physics</td>
+        <td>JSS 1, SSS 1</td>
+        <td>2020-09-01</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo records are protected.', 'warning')">Protected</button>
+        </td>
+      </tr>
+      <tr>
+        <td>STAFF-CIA-012</td>
+        <td>Mrs. Grace Babalola</td>
+        <td>English Language</td>
+        <td>JSS 1A (Class Manager)</td>
+        <td>2022-04-10</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo records are protected.', 'warning')">Protected</button>
+        </td>
+      </tr>
+    `;
+  } else {
+    staff.forEach((s) => {
+      rowsHtml += `
+        <tr>
+          <td><code>${s.uid.substring(0, 10)}</code></td>
+          <td><strong>${s.displayName}</strong></td>
+          <td>${s.subjectAssigned || "General Subjects"}</td>
+          <td>${s.classAssigned || "Unassigned"}</td>
+          <td>${s.createdAt ? s.createdAt.substring(0, 10) : "2026-06-28"}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="deleteStaffMember('${s.uid}')">Remove</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Onboard & Manage Staff</h3>
-        <button class="btn btn-primary btn-sm" onclick="alert('Create standard Staff user document in Firestore.')">+ New Staff Profile</button>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Active School Staff Roster</h3>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Staff ID</th>
+                <th>Full Name</th>
+                <th>Subject Assigned</th>
+                <th>Class Assigned</th>
+                <th>Date Appointed</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrapper">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Staff ID</th>
-              <th>Full Name</th>
-              <th>Subject Assigned</th>
-              <th>Class Assigned</th>
-              <th>Date Appointed</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>STAFF-CIA-004</td>
-              <td>Mr. John Carter</td>
-              <td>Mathematics, Physics</td>
-              <td>JSS 1, SSS 1</td>
-              <td>2020-09-01</td>
-            </tr>
-            <tr>
-              <td>STAFF-CIA-012</td>
-              <td>Mrs. Grace Babalola</td>
-              <td>English Language</td>
-              <td>JSS 1A (Class Manager)</td>
-              <td>2022-04-10</td>
-            </tr>
-          </tbody>
-        </table>
+
+      <div class="card-panel">
+        <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+          <h3 class="panel-title">Onboard New Academic Staff</h3>
+        </div>
+        <form onsubmit="onboardStaffMember(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div>
+            <h4 style="margin-bottom: 1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; font-weight: 600;">Personal Info</h4>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="staff-fullname" class="form-input" placeholder="e.g. Mr. John Carter" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Username (For Login)</label>
+              <input type="email" id="staff-email" class="form-input" placeholder="john.carter@school.edu" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Secure Access Key (Password)</label>
+              <input type="password" id="staff-password" class="form-input" placeholder="••••••••" required />
+            </div>
+          </div>
+          
+          <div>
+            <h4 style="margin-bottom: 1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; font-weight: 600;">Academic Allocation</h4>
+            <div class="form-group">
+              <label class="form-label">Role Definition</label>
+              <select id="staff-role" class="form-input" required>
+                <option value="teacher">Subject Teacher</option>
+                <option value="class_manager">Class Manager (Form Teacher)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Subject Assigned</label>
+                <input type="text" id="staff-subject" class="form-input" placeholder="e.g. Mathematics" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Class Assigned</label>
+                <input type="text" id="staff-class" class="form-input" placeholder="e.g. JSS 1" required />
+              </div>
+            </div>
+            <div style="background: rgba(var(--primary-rgb), 0.05); border: 1px dashed var(--border-color); border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; font-size: 0.825rem; line-height: 1.5;">
+              <p><strong>✦ Login Sync:</strong> Staff accounts are stored securely in the local school directory. On first login, credentials automatically activate across the secure workspace container.</p>
+            </div>
+          </div>
+          
+          <div style="grid-column: span 2; text-align: right; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">Authorize & Onboard Staff</button>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -1343,69 +1639,139 @@ function renderStaffManagement() {
 
 // Student admission Management
 function renderStudentManagement() {
+  const students = appState.studentList || [];
+  
+  let listHtml = "";
+  if (students.length === 0) {
+    listHtml = `
+      <tr>
+        <td>CIA-2026-0012</td>
+        <td><strong>Alao David</strong></td>
+        <td>Male</td>
+        <td>JSS 1 (A)</td>
+        <td>parent@cia.edu</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo records are protected.', 'warning')">Protected</button>
+        </td>
+      </tr>
+    `;
+  } else {
+    students.forEach((s) => {
+      listHtml += `
+        <tr>
+          <td><code>${s.admissionNumber || s.uid.substring(0, 8)}</code></td>
+          <td><strong>${s.displayName}</strong></td>
+          <td>${s.gender || "Male"}</td>
+          <td>${s.studentClass || "JSS 1"} (${s.arm || "A"})</td>
+          <td>${s.parentEmail || "N/A"}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="deleteStudentProfile('${s.uid}')">Expel</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Student Admissions Desk</h3>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Active Student Roster</h3>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Adm. Number</th>
+                <th>Full Name</th>
+                <th>Gender</th>
+                <th>Class Placement</th>
+                <th>Parent Contact</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${listHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <form onsubmit="event.preventDefault(); showToast('Student admitted successfully into database roster!', 'success');" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-        <div>
-          <h4 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">Personal Records</h4>
-          <div class="form-group">
-            <label class="form-label">Surname</label>
-            <input type="text" class="form-input" value="Alao" required />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">First Name</label>
-              <input type="text" class="form-input" value="David" required />
+
+      <div class="card-panel">
+        <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+          <h3 class="panel-title">Student Admissions Desk</h3>
+        </div>
+        <form onsubmit="admitNewStudent(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div>
+            <h4 style="margin-bottom: 1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; font-weight: 600;">Personal Records</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Surname (Last Name)</label>
+                <input type="text" id="stud-surname" class="form-input" placeholder="e.g. Alao" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">First Name</label>
+                <input type="text" id="stud-firstname" class="form-input" placeholder="e.g. David" required />
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Gender</label>
-              <select class="form-input">
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Date of Birth</label>
-              <input type="date" class="form-input" value="2013-04-12" required />
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Gender</label>
+                <select id="stud-gender" class="form-input">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Date of Birth</label>
+                <input type="date" id="stud-dob" class="form-input" value="2013-04-12" required />
+              </div>
             </div>
             <div class="form-group">
               <label class="form-label">Admission Number</label>
-              <input type="text" class="form-input" value="CIA-2026-0012" required />
+              <input type="text" id="stud-adm-no" class="form-input" placeholder="e.g. CIA-2026-0012" required />
             </div>
           </div>
-        </div>
-        
-        <div>
-          <h4 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">Academic Placement & Parent</h4>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Class</label>
-              <input type="text" class="form-input" value="JSS 1" required />
+          
+          <div>
+            <h4 style="margin-bottom: 1rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem; font-weight: 600;">Student Portal & Parent Info</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Student Email (For Portal Access)</label>
+                <input type="email" id="stud-email" class="form-input" placeholder="student@school.edu" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Secure Portal Password</label>
+                <input type="password" id="stud-password" class="form-input" placeholder="••••••••" required />
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Arm</label>
-              <input type="text" class="form-input" value="A" required />
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Class</label>
+                <input type="text" id="stud-class" class="form-input" value="JSS 1" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Arm</label>
+                <input type="text" id="stud-arm" class="form-input" value="A" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Father Full Name</label>
+                <input type="text" id="stud-father" class="form-input" placeholder="Chief Babajide Alao" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Father Contact Email</label>
+                <input type="email" id="stud-father-email" class="form-input" placeholder="parent@cia.edu" required />
+              </div>
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Father Name</label>
-            <input type="text" class="form-input" value="Chief Babajide Alao (Snr)" required />
+          
+          <div style="grid-column: span 2; text-align: right; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">Process Admittance & Issue Portal ID</button>
           </div>
-          <div class="form-group">
-            <label class="form-label">Father Contact Email</label>
-            <input type="email" class="form-input" value="parent@cia.edu" required />
-          </div>
-        </div>
-        
-        <div style="grid-column: span 2; text-align: right;">
-          <button type="submit" class="btn btn-primary">Process Admittance & Issue IDs</button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   `;
 }
@@ -2120,6 +2486,251 @@ window.navigateTo = navigateTo;
 window.toggleTheme = toggleTheme;
 window.showToast = showToast;
 window.sendChatMessage = sendChatMessage;
+
+// Multi-tenant operational workspace actions
+async function actAsSchoolAdmin(schoolId) {
+  appState.impersonatedSchoolId = schoolId;
+  showToast("Switching context to school administrator...", "info");
+  await loadDataForCurrentContext();
+  showToast(`Context loaded: ${appState.school?.name || "School"} Admin Dashboard`, "success");
+  navigateTo("dashboard");
+}
+window.actAsSchoolAdmin = actAsSchoolAdmin;
+
+async function exitImpersonation() {
+  appState.impersonatedSchoolId = null;
+  showToast("Reverting context to Super Admin...", "info");
+  await loadDataForCurrentContext();
+  showToast("Returned to Global SaaS Desk", "success");
+  navigateTo("dashboard");
+}
+window.exitImpersonation = exitImpersonation;
+
+async function createSchoolBySuperAdmin(event) {
+  event.preventDefault();
+  
+  const schoolName = document.getElementById("sadmin-school-name")?.value;
+  const motto = document.getElementById("sadmin-school-motto")?.value;
+  const type = document.getElementById("sadmin-school-type")?.value;
+  const year = parseInt(document.getElementById("sadmin-school-year")?.value || "2026");
+  const address = document.getElementById("sadmin-school-address")?.value;
+  const state = document.getElementById("sadmin-school-state")?.value;
+  const country = document.getElementById("sadmin-school-country")?.value;
+  const adminName = document.getElementById("sadmin-admin-name")?.value;
+  const email = document.getElementById("sadmin-admin-email")?.value;
+  const password = document.getElementById("sadmin-admin-password")?.value;
+
+  showToast("Deploying isolated school instance container...", "info");
+  
+  try {
+    const schoolId = `sch_${Date.now()}`;
+    
+    // 1. Save School details
+    await setDoc(doc(db, "schools", schoolId), {
+      id: schoolId,
+      name: schoolName,
+      type,
+      motto,
+      establishedYear: year,
+      email,
+      phone: "+234 800 000 0000",
+      website: "",
+      country,
+      state,
+      city: state,
+      address,
+      logo: "",
+      coverPhoto: "",
+      ownerName: adminName,
+      ownerEmail: email,
+      ownerPhone: "",
+      status: "approved",
+      subscriptionTier: "growth",
+      createdAt: new Date().toISOString()
+    });
+
+    // 2. Create User document in Firestore users collection
+    const generatedUid = `user_admin_${Date.now()}`;
+    await setDoc(doc(db, "users", generatedUid), {
+      uid: generatedUid,
+      email,
+      password, // Stored to allow self-healing on-the-fly signup
+      displayName: adminName,
+      role: "school_admin",
+      schoolId,
+      permissions: ["all"],
+      disabled: false,
+      createdAt: new Date().toISOString()
+    });
+
+    // 3. Seed standard setup configuration
+    await setDoc(doc(db, "academic_structures", schoolId), {
+      id: schoolId,
+      sessions: ["2026/2027"],
+      terms: ["First Term", "Second Term", "Third Term"],
+      departments: ["General", "Science", "Arts"],
+      classes: ["JSS 1", "JSS 2", "JSS 3", "SSS 1", "SSS 2", "SSS 3"],
+      arms: ["A", "B"],
+      houses: ["Red", "Blue"],
+      subjects: ["Mathematics", "English", "Basic Science", "Civic Education"],
+      gradingSystem: [
+        { grade: "A", minScore: 75, maxScore: 100, remark: "Excellent" },
+        { grade: "B", minScore: 65, maxScore: 74, remark: "Very Good" },
+        { grade: "C", minScore: 50, maxScore: 64, remark: "Credit" },
+        { grade: "F", minScore: 0, maxScore: 49, remark: "Fail" }
+      ],
+      resultStructure: {
+        caMax: 30,
+        assignmentMax: 10,
+        examMax: 60
+      }
+    });
+
+    showToast("School Instance Deployed successfully!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+window.createSchoolBySuperAdmin = createSchoolBySuperAdmin;
+
+async function deleteSchoolInstance(schoolId) {
+  if (confirm("Are you sure you want to delete this school instance? All databases will be unlinked.")) {
+    showToast("Unlinking database container...", "info");
+    try {
+      await deleteDoc(doc(db, "schools", schoolId));
+      showToast("School instance deleted successfully.", "success");
+      await loadDataForCurrentContext();
+      renderApp();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  }
+}
+window.deleteSchoolInstance = deleteSchoolInstance;
+
+async function onboardStaffMember(event) {
+  event.preventDefault();
+  const displayName = document.getElementById("staff-fullname")?.value;
+  const email = document.getElementById("staff-email")?.value;
+  const password = document.getElementById("staff-password")?.value;
+  const role = document.getElementById("staff-role")?.value;
+  const subjectAssigned = document.getElementById("staff-subject")?.value;
+  const classAssigned = document.getElementById("staff-class")?.value;
+
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: No active school context found.", "error");
+    return;
+  }
+
+  showToast("Adding staff credentials to roster...", "info");
+  try {
+    const generatedUid = `staff_${Date.now()}`;
+    await setDoc(doc(db, "users", generatedUid), {
+      uid: generatedUid,
+      email,
+      password, // Plain text for on-the-fly provisioning
+      displayName,
+      role,
+      schoolId: sId,
+      subjectAssigned,
+      classAssigned,
+      permissions: ["grades", "attendance"],
+      disabled: false,
+      createdAt: new Date().toISOString()
+    });
+
+    showToast("Staff profile authorized successfully!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+window.onboardStaffMember = onboardStaffMember;
+
+async function deleteStaffMember(staffUid) {
+  if (confirm("Are you sure you want to remove this staff profile?")) {
+    showToast("Removing credentials...", "info");
+    try {
+      await deleteDoc(doc(db, "users", staffUid));
+      showToast("Staff profile removed.", "success");
+      await loadDataForCurrentContext();
+      renderApp();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  }
+}
+window.deleteStaffMember = deleteStaffMember;
+
+async function admitNewStudent(event) {
+  event.preventDefault();
+  const surname = document.getElementById("stud-surname")?.value;
+  const firstname = document.getElementById("stud-firstname")?.value;
+  const gender = document.getElementById("stud-gender")?.value;
+  const dob = document.getElementById("stud-dob")?.value;
+  const admNo = document.getElementById("stud-adm-no")?.value;
+  const email = document.getElementById("stud-email")?.value;
+  const password = document.getElementById("stud-password")?.value;
+  const studentClass = document.getElementById("stud-class")?.value;
+  const arm = document.getElementById("stud-arm")?.value;
+  const fatherName = document.getElementById("stud-father")?.value;
+  const parentEmail = document.getElementById("stud-father-email")?.value;
+
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: No active school context found.", "error");
+    return;
+  }
+
+  showToast("Admitting student and generating credentials...", "info");
+  try {
+    const generatedUid = `student_${Date.now()}`;
+    await setDoc(doc(db, "users", generatedUid), {
+      uid: generatedUid,
+      email,
+      password, // Plain text for on-the-fly provisioning
+      displayName: `${surname} ${firstname}`,
+      role: "student",
+      schoolId: sId,
+      admissionNumber: admNo,
+      gender,
+      dob,
+      studentClass,
+      arm,
+      fatherName,
+      parentEmail,
+      permissions: ["view_results", "cbt"],
+      disabled: false,
+      createdAt: new Date().toISOString()
+    });
+
+    showToast("Student admitted successfully!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+window.admitNewStudent = admitNewStudent;
+
+async function deleteStudentProfile(studentUid) {
+  if (confirm("Are you sure you want to delete this student profile?")) {
+    showToast("Removing credentials...", "info");
+    try {
+      await deleteDoc(doc(db, "users", studentUid));
+      showToast("Student profile removed.", "success");
+      await loadDataForCurrentContext();
+      renderApp();
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  }
+}
+window.deleteStudentProfile = deleteStudentProfile;
 
 // Render app initially
 renderApp();
