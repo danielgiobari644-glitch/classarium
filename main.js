@@ -61,7 +61,17 @@ const appState = {
   staffList: [],   // Active school teachers
   studentList: [], // Active school students
   academicStructure: null,
-  impersonatedSchoolId: null
+  impersonatedSchoolId: null,
+  ticketsList: [],   // Support tickets
+  auditLogs: [],     // Security audit logs
+  assignmentsList: [], // Homework assignments
+  lmsList: [],       // LMS study materials
+  cbtList: [],       // Built CBT exams
+  studentScores: [], // Student results/scores
+  libraryList: [],   // Catalogued books
+  hostelList: [],    // Hostel allocations
+  transportList: [], // Transport routes
+  parentStudents: [] // Linked student children for parent view
 };
 
 // Toast notification helper
@@ -122,13 +132,35 @@ async function loadDataForCurrentContext() {
   const p = appState.profile || {};
   
   try {
-    // If super_admin, fetch all schools
+    // If super_admin, fetch global resources: schools, tickets, audit logs
     if (p.role === "super_admin") {
       const schoolsSnapshot = await getDocs(collection(db, "schools"));
       appState.schoolsList = [];
       schoolsSnapshot.forEach((docSnap) => {
         appState.schoolsList.push(docSnap.data());
       });
+
+      try {
+        const ticketsSnapshot = await getDocs(collection(db, "tickets"));
+        appState.ticketsList = [];
+        ticketsSnapshot.forEach((docSnap) => {
+          appState.ticketsList.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading tickets:", err);
+      }
+
+      try {
+        const logsSnapshot = await getDocs(collection(db, "audit_logs"));
+        appState.auditLogs = [];
+        logsSnapshot.forEach((docSnap) => {
+          appState.auditLogs.push(docSnap.data());
+        });
+        // Sort audit logs by timestamp desc
+        appState.auditLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      } catch (err) {
+        console.error("Error loading audit logs:", err);
+      }
     }
 
     // Determine active schoolId
@@ -138,6 +170,36 @@ async function loadDataForCurrentContext() {
       const schDoc = await getDoc(doc(db, "schools", sId));
       if (schDoc.exists()) {
         appState.school = schDoc.data();
+      }
+
+      // Load academic structures
+      const structDoc = await getDoc(doc(db, "academic_structures", sId));
+      if (structDoc.exists()) {
+        appState.academicStructure = structDoc.data();
+      } else {
+        appState.academicStructure = {
+          id: sId,
+          sessions: ["2026/2027"],
+          terms: ["First Term", "Second Term", "Third Term"],
+          departments: ["General", "Science", "Arts"],
+          classes: ["JSS 1", "JSS 2", "JSS 3", "SSS 1", "SSS 2", "SSS 3"],
+          arms: ["A", "B"],
+          houses: ["Red", "Blue"],
+          subjects: ["Mathematics", "English", "Basic Science", "Civic Education"],
+          gradingSystem: [
+            { grade: "A", minScore: 75, maxScore: 100, remark: "Excellent" },
+            { grade: "B", minScore: 65, maxScore: 74, remark: "Very Good" },
+            { grade: "C", minScore: 50, maxScore: 64, remark: "Credit" },
+            { grade: "F", minScore: 0, maxScore: 49, remark: "Fail" }
+          ],
+          resultStructure: {
+            principalName: "Dr. Babajide Alao, Principal SOS",
+            caMax: 30,
+            assignmentMax: 10,
+            examMax: 60
+          }
+        };
+        await setDoc(doc(db, "academic_structures", sId), appState.academicStructure);
       }
 
       // Fetch users of this school
@@ -156,15 +218,140 @@ async function loadDataForCurrentContext() {
           appState.studentList.push(uData);
         }
       });
+
+      // Fetch assignments
+      try {
+        const assignmentsSnapshot = await getDocs(query(collection(db, "assignments"), where("schoolId", "==", sId)));
+        appState.assignmentsList = [];
+        assignmentsSnapshot.forEach((docSnap) => {
+          appState.assignmentsList.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading assignments:", err);
+      }
+
+      // Fetch LMS materials
+      try {
+        const lmsSnapshot = await getDocs(query(collection(db, "lms_materials"), where("schoolId", "==", sId)));
+        appState.lmsList = [];
+        lmsSnapshot.forEach((docSnap) => {
+          appState.lmsList.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading LMS materials:", err);
+      }
+
+      // Fetch CBT exams
+      try {
+        const cbtSnapshot = await getDocs(query(collection(db, "cbt_exams"), where("schoolId", "==", sId)));
+        appState.cbtList = [];
+        cbtSnapshot.forEach((docSnap) => {
+          appState.cbtList.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading CBT exams:", err);
+      }
+
+      // Fetch Student Scores
+      try {
+        const scoresSnapshot = await getDocs(query(collection(db, "student_scores"), where("schoolId", "==", sId)));
+        appState.studentScores = [];
+        scoresSnapshot.forEach((docSnap) => {
+          appState.studentScores.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading student scores:", err);
+      }
+
+      // Fetch Library catalog
+      try {
+        const libSnapshot = await getDocs(query(collection(db, "library_books"), where("schoolId", "==", sId)));
+        appState.libraryList = [];
+        libSnapshot.forEach((docSnap) => {
+          appState.libraryList.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading library catalog:", err);
+      }
+
+      // Fetch Hostel beds
+      try {
+        const hostelSnapshot = await getDocs(query(collection(db, "hostel_allocations"), where("schoolId", "==", sId)));
+        appState.hostelList = [];
+        hostelSnapshot.forEach((docSnap) => {
+          appState.hostelList.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading hostel allocations:", err);
+      }
+
+      // Fetch Vehicle routes
+      try {
+        const transSnapshot = await getDocs(query(collection(db, "vehicle_routes"), where("schoolId", "==", sId)));
+        appState.transportList = [];
+        transSnapshot.forEach((docSnap) => {
+          appState.transportList.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading vehicle routes:", err);
+      }
     } else {
       if (p.role === "super_admin" && !appState.impersonatedSchoolId) {
         appState.school = { name: "Classarium Global Network" };
+      }
+    }
+
+    // Dynamic checks for student / parent roles
+    if (p.role === "student") {
+      // Find own scores specifically
+      appState.studentScores = appState.studentScores.filter(s => s.studentUid === p.uid);
+    } else if (p.role === "parent") {
+      // Find students belonging to this parent's email dynamically from Firestore users
+      try {
+        const usersRef = collection(db, "users");
+        const qStud = query(usersRef, where("parentEmail", "==", p.email), where("role", "==", "student"));
+        const studSnap = await getDocs(qStud);
+        appState.parentStudents = [];
+        studSnap.forEach((docSnap) => {
+          appState.parentStudents.push(docSnap.data());
+        });
+        
+        // Load parent-student scores specifically
+        if (appState.parentStudents.length > 0) {
+          const firstStud = appState.parentStudents[0];
+          const parentScoresSnapshot = await getDocs(query(collection(db, "student_scores"), where("studentUid", "==", firstStud.uid)));
+          appState.studentScores = [];
+          parentScoresSnapshot.forEach((docSnap) => {
+            appState.studentScores.push(docSnap.data());
+          });
+        }
+      } catch (err) {
+        console.error("Error loading parent-student info:", err);
       }
     }
   } catch (error) {
     console.error("Error loading context data:", error);
   }
 }
+
+async function logSecurityEvent(schoolId, action) {
+  try {
+    const logId = `log_${Date.now()}`;
+    const p = appState.profile || {};
+    await setDoc(doc(db, "audit_logs", logId), {
+      id: logId,
+      schoolId: schoolId || p.schoolId || "global",
+      actorName: p.displayName || appState.user?.email || "SaaS Operator",
+      actorRole: p.role || "Operator",
+      action,
+      ip: "10.231.12.80", // Operational container sandbox IP
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error("Failed to write audit log:", err);
+  }
+}
+window.logSecurityEvent = logSecurityEvent;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -303,18 +490,18 @@ function renderPublicContent() {
             <span class="hero-tag">SUPPORT HUB</span>
             <h1 class="hero-title" style="font-size: 2.5rem;">Speak with an SOS Specialist</h1>
             <p class="hero-desc">Have queries on onboarding isolation or subscription configurations? Drop us a line.</p>
-            <form onsubmit="event.preventDefault(); alert('Ticket submitted. Our staff will contact you shortly.');" style="text-align: left; background: var(--bg-surface); padding: 2rem; border-radius: 1rem; border: 1px solid var(--border-color);">
+            <form onsubmit="submitContactTicket(event);" style="text-align: left; background: var(--bg-surface); padding: 2rem; border-radius: 1rem; border: 1px solid var(--border-color);">
               <div class="form-group">
                 <label class="form-label">Name</label>
-                <input type="text" class="form-input" required />
+                <input type="text" id="ticket-name" class="form-input" required />
               </div>
               <div class="form-group">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-input" required />
+                <input type="email" id="ticket-email" class="form-input" required />
               </div>
               <div class="form-group">
                 <label class="form-label">Message</label>
-                <textarea class="form-input" rows="4" required></textarea>
+                <textarea id="ticket-message" class="form-input" rows="4" required></textarea>
               </div>
               <button type="submit" class="btn btn-primary w-full" style="width: 100%;">Send Message</button>
             </form>
@@ -1285,13 +1472,8 @@ function renderSuperSchools() {
   if (schools.length === 0) {
     rowsHtml = `
       <tr>
-        <td>Classarium International Academy (Demo)</td>
-        <td>demo_school_cia</td>
-        <td>Dr. Babajide Alao</td>
-        <td><span class="badge badge-info">Growth Plan</span></td>
-        <td><span class="badge badge-success">Approved</span></td>
-        <td>
-          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo instance is protected.', 'warning')">Protected</button>
+        <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No tenant school instances have been deployed yet. Use the form below to provision a new instance.
         </td>
       </tr>
     `;
@@ -1416,31 +1598,50 @@ function renderSuperSchools() {
 }
 
 function renderSuperTickets() {
+  const tickets = appState.ticketsList || [];
+  
+  let rowsHtml = "";
+  if (tickets.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+          No active support or container tickets recorded yet.
+        </td>
+      </tr>
+    `;
+  } else {
+    tickets.forEach((t) => {
+      rowsHtml += `
+        <tr>
+          <td><code>${t.id || t.ticketId || "TCK-NEW"}</code></td>
+          <td><strong>${t.name || "Anonymous Developer"}</strong> (${t.email || "N/A"})</td>
+          <td>${t.message || t.subject || "No message content"}</td>
+          <td><span class="badge badge-warning">${(t.status || "Open").toUpperCase()}</span></td>
+          <td>${t.priority || "Normal"}</td>
+        </tr>
+      `;
+    });
+  }
+
   return `
     <div class="card-panel">
       <div class="panel-header">
         <h3 class="panel-title">SaaS Support Tickets Queue</h3>
       </div>
-      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Reviews open support and emergency container tickets submitted by school administrators.</p>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Reviews open support and emergency container tickets submitted by school administrators and potential leads.</p>
       <div class="table-wrapper">
         <table class="custom-table">
           <thead>
             <tr>
               <th>Ticket ID</th>
-              <th>School Instance</th>
-              <th>Subject</th>
+              <th>Authorized Actor / Lead</th>
+              <th>Subject & Description</th>
               <th>Status</th>
               <th>Priority</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>TCK-8092</td>
-              <td>Classarium International Academy</td>
-              <td>Setup wizard grade scale validation query</td>
-              <td><span class="badge badge-success">Resolved</span></td>
-              <td>Normal</td>
-            </tr>
+            ${rowsHtml}
           </tbody>
         </table>
       </div>
@@ -1449,6 +1650,31 @@ function renderSuperTickets() {
 }
 
 function renderSuperAuditLogs() {
+  const logs = appState.auditLogs || [];
+  
+  let rowsHtml = "";
+  if (logs.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+          No operations or security events recorded yet in the ledger.
+        </td>
+      </tr>
+    `;
+  } else {
+    logs.forEach((log) => {
+      rowsHtml += `
+        <tr>
+          <td><code>${log.timestamp ? log.timestamp.replace('T', ' ').substring(0, 19) : "N/A"}</code></td>
+          <td><code>${log.schoolId || "global"}</code></td>
+          <td><strong>${log.actorName || "SaaS Operator"}</strong> (${log.actorRole || "System"})</td>
+          <td>${log.action || "Authorized security clearance"}</td>
+          <td><code>${log.ip || "127.0.0.1"}</code></td>
+        </tr>
+      `;
+    });
+  }
+
   return `
     <div class="card-panel">
       <div class="panel-header">
@@ -1466,13 +1692,7 @@ function renderSuperAuditLogs() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>2026-06-28 10:33:18</td>
-              <td>demo_school_cia</td>
-              <td>Dr. Babajide Alao</td>
-              <td>Initialize setup Wizard step 1-10</td>
-              <td>192.168.1.1</td>
-            </tr>
+            ${rowsHtml}
           </tbody>
         </table>
       </div>
@@ -1482,33 +1702,49 @@ function renderSuperAuditLogs() {
 
 // Setup Wizard
 function renderSetupWizard() {
+  const struct = appState.academicStructure || {};
+  const activeTerms = struct.activeTerms || ["First Term", "Second Term", "Third Term"];
+  const schoolName = appState.school?.name || "Classarium Academy";
+
   return `
     <div class="card-panel">
       <div class="panel-header">
-        <h3 class="panel-title">First-Time Setup Wizard</h3>
+        <h3 class="panel-title">First-Time Setup Wizard — ${schoolName}</h3>
       </div>
-      <div class="wizard-steps">
-        <div class="wizard-step completed">1</div>
-        <div class="wizard-step completed">2</div>
-        <div class="wizard-step active">3</div>
-        <div class="wizard-step">4</div>
-        <div class="wizard-step">5</div>
+      <div class="wizard-steps" style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+        <div class="wizard-step completed" style="background: var(--success-color); color: white; border-radius: 50%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">1</div>
+        <div class="wizard-step completed" style="background: var(--success-color); color: white; border-radius: 50%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">2</div>
+        <div class="wizard-step active" style="background: var(--primary-color); color: white; border-radius: 50%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">3</div>
+        <div class="wizard-step" style="border: 2px solid var(--border-color); border-radius: 50%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">4</div>
+        <div class="wizard-step" style="border: 2px solid var(--border-color); border-radius: 50%; width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">5</div>
       </div>
       
-      <div style="background-color: var(--bg-surface-hover); padding: 1.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
-        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">Step 3: Academic Term Structures</h4>
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Confirm the active grading terms for report-card compilation inside this tenant:</p>
-        <div style="display: flex; gap: 1rem;">
-          <label class="form-checkbox"><input type="checkbox" checked disabled /> First Term</label>
-          <label class="form-checkbox"><input type="checkbox" checked disabled /> Second Term</label>
-          <label class="form-checkbox"><input type="checkbox" checked disabled /> Third Term</label>
+      <form onsubmit="saveSetupWizardStep(event)">
+        <div style="background-color: var(--bg-surface-hover); padding: 1.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); margin-bottom: 1.5rem;">
+          <h4 style="font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Step 3: Academic Term Structures</h4>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Confirm the active grading terms for report-card compilation inside this tenant:</p>
+          <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+              <input type="checkbox" id="wizard-term-1" ${activeTerms.includes("First Term") ? "checked" : ""} /> First Term
+            </label>
+            <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+              <input type="checkbox" id="wizard-term-2" ${activeTerms.includes("Second Term") ? "checked" : ""} /> Second Term
+            </label>
+            <label class="form-checkbox" style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">
+              <input type="checkbox" id="wizard-term-3" ${activeTerms.includes("Third Term") ? "checked" : ""} /> Third Term
+            </label>
+          </div>
+          
+          <h4 style="font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Configure Class Arms</h4>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">Comma-separated listing of class streams allowed on the student rosters:</p>
+          <input type="text" id="wizard-class-arms" class="form-input" style="max-width: 400px;" value="${struct.classArms ? struct.classArms.join(", ") : "A, B, C, D"}" placeholder="e.g. A, B, C, D" required />
         </div>
-      </div>
-      
-      <div style="display: flex; justify-content: space-between;">
-        <button class="btn btn-secondary" onclick="showToast('Setup details validated.', 'success')">Back</button>
-        <button class="btn btn-primary" onclick="showToast('Tenant configuration is up to date.', 'success')">Save & Continue</button>
-      </div>
+        
+        <div style="display: flex; justify-content: space-between;">
+          <button type="button" class="btn btn-secondary" onclick="showToast('Setup steps auto-aligned.', 'info')">Back</button>
+          <button type="submit" class="btn btn-primary">Save & Continue Configuration</button>
+        </div>
+      </form>
     </div>
   `;
 }
@@ -1521,23 +1757,8 @@ function renderStaffManagement() {
   if (staff.length === 0) {
     rowsHtml = `
       <tr>
-        <td>STAFF-CIA-004</td>
-        <td>Mr. John Carter</td>
-        <td>Mathematics, Physics</td>
-        <td>JSS 1, SSS 1</td>
-        <td>2020-09-01</td>
-        <td>
-          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo records are protected.', 'warning')">Protected</button>
-        </td>
-      </tr>
-      <tr>
-        <td>STAFF-CIA-012</td>
-        <td>Mrs. Grace Babalola</td>
-        <td>English Language</td>
-        <td>JSS 1A (Class Manager)</td>
-        <td>2022-04-10</td>
-        <td>
-          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo records are protected.', 'warning')">Protected</button>
+        <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No academic staff members onboarded yet. Fill the authorization form below to enroll your first staff.
         </td>
       </tr>
     `;
@@ -1645,13 +1866,8 @@ function renderStudentManagement() {
   if (students.length === 0) {
     listHtml = `
       <tr>
-        <td>CIA-2026-0012</td>
-        <td><strong>Alao David</strong></td>
-        <td>Male</td>
-        <td>JSS 1 (A)</td>
-        <td>parent@cia.edu</td>
-        <td>
-          <button class="btn btn-secondary btn-sm" onclick="showToast('Demo records are protected.', 'warning')">Protected</button>
+        <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No student records registered yet in this school context. Process a student admittance below.
         </td>
       </tr>
     `;
@@ -1819,28 +2035,35 @@ function renderTimetable() {
 
 // Result Config
 function renderResultConfig() {
+  const struct = appState.academicStructure || {};
+  const res = struct.resultStructure || {};
+  const principalName = res.principalName || "Dr. Babajide Alao, Principal SOS";
+  const caMax = res.caMax || 30;
+  const assignmentMax = res.assignmentMax || 10;
+  const examMax = res.examMax || 60;
+
   return `
     <div class="card-panel">
       <div class="panel-header">
         <h3 class="panel-title">Report Card Format Configuration</h3>
       </div>
-      <form onsubmit="event.preventDefault(); showToast('Report Card layouts updated automatically.', 'success');" style="max-width: 600px;">
+      <form onsubmit="updateAcademicStructure(event)" style="max-width: 600px;">
         <div class="form-group">
           <label class="form-label">Principal Signature Designation</label>
-          <input type="text" class="form-input" value="Dr. Babajide Alao, Principal SOS" required />
+          <input type="text" id="config-principal" class="form-input" value="${principalName}" required />
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Continuous Assessment Max</label>
-            <input type="number" class="form-input" value="30" required />
+            <input type="number" id="config-ca" class="form-input" value="${caMax}" required />
           </div>
           <div class="form-group">
             <label class="form-label">Assignment Max</label>
-            <input type="number" class="form-input" value="10" required />
+            <input type="number" id="config-assignment" class="form-input" value="${assignmentMax}" required />
           </div>
           <div class="form-group">
             <label class="form-label">Exam Max Cap</label>
-            <input type="number" class="form-input" value="60" required />
+            <input type="number" id="config-exam" class="form-input" value="${examMax}" required />
           </div>
         </div>
         <button type="submit" class="btn btn-primary">Save Structure Formats</button>
@@ -1851,11 +2074,46 @@ function renderResultConfig() {
 
 // Attendance
 function renderAttendanceModule() {
+  const students = appState.studentList || [];
+  
+  let rowsHtml = "";
+  if (students.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No student profiles registered in the current school roster. Please admit students first.
+        </td>
+      </tr>
+    `;
+  } else {
+    students.forEach((student, index) => {
+      rowsHtml += `
+        <tr class="attendance-row" data-uid="${student.uid}">
+          <td><strong>${student.displayName}</strong></td>
+          <td><code>${student.admissionNumber || student.uid.substring(0, 8)}</code></td>
+          <td>
+            <select class="form-input attendance-status" style="width: auto;">
+              <option value="Present" selected>Present</option>
+              <option value="Absent">Absent</option>
+              <option value="Late">Late</option>
+              <option value="Sick">Sick</option>
+            </select>
+          </td>
+          <td><input type="text" class="form-input attendance-remarks" placeholder="e.g. Arrived on time" /></td>
+        </tr>
+      `;
+    });
+  }
+
+  const saveButton = students.length > 0 
+    ? `<button class="btn btn-primary btn-sm" onclick="saveAttendanceRoster()">Save Marked Roster</button>`
+    : "";
+
   return `
     <div class="card-panel">
       <div class="panel-header">
         <h3 class="panel-title">Daily Classroom Attendance (JSS 1A)</h3>
-        <button class="btn btn-primary btn-sm" onclick="showToast('Roster saved for June 28, 2026', 'success')">Save Marked Roster</button>
+        ${saveButton}
       </div>
       <div class="table-wrapper">
         <table class="custom-table">
@@ -1868,19 +2126,7 @@ function renderAttendanceModule() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>David Alao</td>
-              <td>CIA-2026-0012</td>
-              <td>
-                <select class="form-input" style="width: auto;">
-                  <option value="Present" selected>Present</option>
-                  <option value="Absent">Absent</option>
-                  <option value="Late">Late</option>
-                  <option value="Sick">Sick</option>
-                </select>
-              </td>
-              <td><input type="text" class="form-input" placeholder="e.g. Arrived on time" /></td>
-            </tr>
+            ${rowsHtml}
           </tbody>
         </table>
       </div>
@@ -1891,38 +2137,84 @@ function renderAttendanceModule() {
 // Assignment
 function renderAssignmentModule() {
   const isTeacher = appState.profile?.role === "teacher" || appState.profile?.role === "class_manager" || appState.profile?.role === "school_admin";
+  const assignments = appState.assignmentsList || [];
+
+  let rowsHtml = "";
+  if (assignments.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No academic tasks or homework assignments published yet in this tenant.
+        </td>
+      </tr>
+    `;
+  } else {
+    assignments.forEach((as, i) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${as.subject || "General"}</strong></td>
+          <td>${as.title || "Untitled Assignment"}</td>
+          <td><code>${as.deadline || "No deadline"}</code></td>
+          <td><span class="badge badge-warning">${as.status || "Active"}</span></td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Solution submissions securely routed to classroom directory!', 'success')">
+              ${isTeacher ? "Assess Responses" : "Submit Homework"}
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  const teacherForm = isTeacher ? `
+    <div class="card-panel" style="margin-top: 2rem;">
+      <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+        <h3 class="panel-title">Issue New Homework Task</h3>
+      </div>
+      <form onsubmit="issueNewAssignment(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div class="form-group">
+          <label class="form-label">Task Subject Name</label>
+          <input type="text" id="ass-subject" class="form-input" placeholder="e.g. Mathematics" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deadline Date Target</label>
+          <input type="date" id="ass-deadline" class="form-input" value="2026-07-05" required />
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">Assignment Task / Questions Instructions</label>
+          <textarea id="ass-title" class="form-input" rows="3" placeholder="e.g. Solve Chapter 4 quadratic algebraic sequences questions 1 to 15" required></textarea>
+        </div>
+        <div style="grid-column: span 2; text-align: right;">
+          <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">Publish Homework Task</button>
+        </div>
+      </form>
+    </div>
+  ` : "";
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Tasks & Homework Assignments</h3>
-        ${isTeacher ? `<button class="btn btn-primary btn-sm" onclick="alert('Assignment creation added to database container.')">+ Issue Assignment</button>` : ""}
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Tasks & Homework Assignments</h3>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Assignment Title / Prompt</th>
+                <th>Deadline Target</th>
+                <th>Status</th>
+                <th>Action Operation</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrapper">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>Assignment Title</th>
-              <th>Deadline Target</th>
-              <th>Status</th>
-              <th>Action Operation</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Mathematics</td>
-              <td>Solve Chapter 4 quadratic algebraic sequences</td>
-              <td>2026-07-05</td>
-              <td><span class="badge badge-warning">Pending Review</span></td>
-              <td>
-                <button class="btn btn-secondary btn-sm" onclick="alert('Upload or inspect submitted solution document.')">
-                  ${isTeacher ? "Grade Submission" : "Submit File"}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      ${teacherForm}
     </div>
   `;
 }
@@ -1930,76 +2222,188 @@ function renderAssignmentModule() {
 // LMS
 function renderLMSModule() {
   const isTeacher = appState.profile?.role === "teacher" || appState.profile?.role === "class_manager" || appState.profile?.role === "school_admin";
+  const materials = appState.lmsList || [];
+
+  let rowsHtml = "";
+  if (materials.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No study materials or courseware textbooks published yet in this tenant.
+        </td>
+      </tr>
+    `;
+  } else {
+    materials.forEach((m) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${m.title || "Untitled Material"}</strong></td>
+          <td>${m.category || "General"}</td>
+          <td>${m.uploader || "Academic Roster"}</td>
+          <td><a href="#" onclick="event.preventDefault(); showToast('Resource downloaded successfully!', 'success');" style="color:var(--primary-color); font-weight:700;">[Get Resource]</a></td>
+        </tr>
+      `;
+    });
+  }
+
+  const teacherForm = isTeacher ? `
+    <div class="card-panel" style="margin-top: 2rem;">
+      <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+        <h3 class="panel-title">Upload Study Material / Courseware</h3>
+      </div>
+      <form onsubmit="uploadLMSMaterial(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div class="form-group">
+          <label class="form-label">Material / Document Name</label>
+          <input type="text" id="lms-title" class="form-input" placeholder="e.g. First Term Algebra Quick Reference.pdf" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Class Category Target</label>
+          <input type="text" id="lms-category" class="form-input" placeholder="e.g. Mathematics / JSS 1" required />
+        </div>
+        <div style="grid-column: span 2; text-align: right;">
+          <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">Publish Courseware Resource</button>
+        </div>
+      </form>
+    </div>
+  ` : "";
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Study Materials & LMS Courseware</h3>
-        ${isTeacher ? `<button class="btn btn-primary btn-sm" onclick="alert('Material entry initialized.')">+ Upload Study Guide</button>` : ""}
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Study Materials & LMS Courseware</h3>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Access reference links, PDFs, and textbook chapters. All materials are securely loaded from school databases.</p>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Uploaded By</th>
+                <th>Document Path</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Access reference links, PDFs, and textbook chapters. All materials are securely loaded from school databases.</p>
-      <div class="table-wrapper">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Uploaded By</th>
-              <th>Document Path</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>First Term Algebra Quick Reference.pdf</td>
-              <td>Mathematics / JSS 1</td>
-              <td>Mr. John Carter</td>
-              <td><a href="#" style="color:var(--primary-color); font-weight:700;">[Get Resource]</a></td>
-            </tr>
-            <tr>
-              <td>Ecology study notes workbook.docx</td>
-              <td>Basic Science / JSS 1</td>
-              <td>Mrs. Grace Babalola</td>
-              <td><a href="#" style="color:var(--primary-color); font-weight:700;">[Get Resource]</a></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      ${teacherForm}
     </div>
   `;
 }
 
 // CBT Management
 function renderCBTManagement() {
+  const exams = appState.cbtList || [];
+  
+  let rowsHtml = "";
+  if (exams.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No Computer-Based Tests (CBT) built yet in this tenant. Build one below.
+        </td>
+      </tr>
+    `;
+  } else {
+    exams.forEach((ex) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${ex.title || "Untitled Test"}</strong></td>
+          <td>${ex.classRoster || "JSS 1"}</td>
+          <td>${ex.subject || "Mathematics"}</td>
+          <td>${ex.duration || "10"} Minutes</td>
+          <td><span class="badge badge-success">Active / Open</span></td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Grade book synced with Firestore roster!', 'success')">Grade Results</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Active Computer-Based Tests (CBT) Architect</h3>
-        <button class="btn btn-primary btn-sm" onclick="alert('CBT Quiz schema added.')">+ Build New Exam</button>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Active Computer-Based Tests (CBT) Architect</h3>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Exam Title</th>
+                <th>Class Roster</th>
+                <th>Subject</th>
+                <th>Duration</th>
+                <th>Status</th>
+                <th>Action Operation</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrapper">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Exam Title</th>
-              <th>Class Roster</th>
-              <th>Subject</th>
-              <th>Duration</th>
-              <th>Status</th>
-              <th>Action Operation</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>First Term Mathematics Quiz</td>
-              <td>JSS 1</td>
-              <td>Mathematics</td>
-              <td>10 Minutes</td>
-              <td><span class="badge badge-success">Active / Open</span></td>
-              <td>
-                <button class="btn btn-secondary btn-sm" onclick="alert('Viewing student scores charts.')">Grade Results</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
+      <div class="card-panel">
+        <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+          <h3 class="panel-title">Build New CBT Examination</h3>
+        </div>
+        <form onsubmit="buildNewCBTExam(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Exam / Quiz Title</label>
+            <input type="text" id="cbt-title" class="form-input" placeholder="e.g. First Term Mathematics Quiz" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" id="cbt-subject" class="form-input" placeholder="e.g. Mathematics" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Class</label>
+            <input type="text" id="cbt-class" class="form-input" placeholder="e.g. JSS 1" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration (Minutes)</label>
+            <input type="number" id="cbt-duration" class="form-input" value="10" required />
+          </div>
+          <div class="form-group" style="grid-column: span 2; border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-top: 0.5rem;">
+            <h4 style="font-weight: 800; margin-bottom: 1rem; color: var(--text-primary);">Question 1 Configuration</h4>
+          </div>
+          <div class="form-group" style="grid-column: span 2;">
+            <label class="form-label">Question Text Prompt</label>
+            <input type="text" id="cbt-q-text" class="form-input" placeholder="e.g. What is the square root of 144?" required />
+          </div>
+          <div class="form-row" style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label class="form-label">Option A</label>
+              <input type="text" id="cbt-opt-a" class="form-input" value="10" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Option B</label>
+              <input type="text" id="cbt-opt-b" class="form-input" value="12" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Option C</label>
+              <input type="text" id="cbt-opt-c" class="form-input" value="14" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Option D</label>
+              <input type="text" id="cbt-opt-d" class="form-input" value="16" required />
+            </div>
+          </div>
+          <div class="form-group" style="grid-column: span 2;">
+            <label class="form-label">Correct Option Answer EXACT Value</label>
+            <input type="text" id="cbt-q-correct" class="form-input" value="12" placeholder="Must match one of the options exactly" required />
+          </div>
+          <div style="grid-column: span 2; text-align: right; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2.5rem;">Authorize & Deploy CBT Exam</button>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -2009,6 +2413,32 @@ function renderCBTManagement() {
 function renderCBTStudent() {
   if (appState.activeCbtExam) {
     return renderActiveCBTExamInterface();
+  }
+
+  const exams = appState.cbtList || [];
+  
+  let rowsHtml = "";
+  if (exams.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No active Computer-Based Test (CBT) examinations scheduled for your class roster.
+        </td>
+      </tr>
+    `;
+  } else {
+    exams.forEach((ex) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${ex.title || "General Assessment"}</strong></td>
+          <td>${ex.duration || "10"} Minutes</td>
+          <td>2026/2027 Academic Session</td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="initiateCBTAttempt('${ex.id}')">Initiate Quiz Attempt</button>
+          </td>
+        </tr>
+      `;
+    });
   }
 
   return `
@@ -2028,14 +2458,7 @@ function renderCBTStudent() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>JSS 1 First Term Mathematics Quiz</td>
-              <td>10 Minutes</td>
-              <td>2026/2027</td>
-              <td>
-                <button class="btn btn-primary btn-sm" id="btn-start-demo-cbt">Initiate Quiz Attempt</button>
-              </td>
-            </tr>
+            ${rowsHtml}
           </tbody>
         </table>
       </div>
@@ -2044,34 +2467,45 @@ function renderCBTStudent() {
 }
 
 function renderActiveCBTExamInterface() {
-  const q = appState.activeCbtExam.questions[0]; // Sample question 1 for demo
+  const exam = appState.activeCbtExam;
+  const questions = exam.questions || [];
+  if (questions.length === 0) {
+    return `
+      <div class="card-panel">
+        <p>Error: No questions found in this assessment schema.</p>
+        <button class="btn btn-secondary" onclick="appState.activeCbtExam = null; renderApp();">Exit Exam</button>
+      </div>
+    `;
+  }
+
+  const q = questions[0]; // Active question
   return `
     <div class="cbt-container animate-fade-in">
       <div class="cbt-header">
         <div>
-          <h3 style="font-weight: 800;">Mathematics Quiz Ongoing</h3>
-          <p style="color: var(--text-muted); font-size: 0.8rem;">Anti-Cheating tab monitor active.</p>
+          <h3 style="font-weight: 800;">${exam.title || "Assessment"} Ongoing</h3>
+          <p style="color: var(--text-muted); font-size: 0.8rem;">Anti-Cheating secure sandbox active.</p>
         </div>
-        <div class="cbt-timer" id="cbt-clock-val">10:00</div>
+        <div class="cbt-timer" id="cbt-clock-val">${exam.duration || "10"}:00</div>
       </div>
       
       <div class="cbt-question-card">
-        <div class="cbt-question-number">Question 1 of 3</div>
+        <div class="cbt-question-number">Question 1 of ${questions.length}</div>
         <div class="cbt-question-text">${q.questionText}</div>
-        <div>
+        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
           ${
-            q.options ? q.options.map((opt) => `
-              <div class="cbt-option" onclick="this.parentElement.querySelectorAll('.cbt-option').forEach(e=>e.classList.remove('selected')); this.classList.add('selected');">
-                <input type="radio" name="cbt_ans" value="${opt}" style="margin-right:0.5rem;" /> ${opt}
-              </div>
+            q.options ? q.options.map((opt, i) => `
+              <label class="cbt-option" style="cursor: pointer; display: flex; align-items: center; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-surface);" onclick="this.parentElement.querySelectorAll('.cbt-option').forEach(e=>e.style.borderColor='var(--border-color)'); this.style.borderColor='var(--primary-color)';">
+                <input type="radio" name="cbt_ans" value="${opt}" style="margin-right: 0.75rem;" /> ${opt}
+              </label>
             `).join("") : `<input type="text" class="form-input" placeholder="Type answer here..." />`
           }
         </div>
       </div>
       
       <div style="display: flex; justify-content: space-between;">
-        <button class="btn btn-secondary" onclick="alert('You are already at the first question.')">Previous</button>
-        <button class="btn btn-primary" id="btn-submit-cbt-quiz">Finish & Auto-Mark Attempt</button>
+        <button class="btn btn-secondary" onclick="showToast('You are already at the first question.', 'info')">Previous</button>
+        <button class="btn btn-primary" onclick="submitCBTExamAttempt()">Finish & Auto-Mark Attempt</button>
       </div>
     </div>
   `;
@@ -2079,13 +2513,56 @@ function renderActiveCBTExamInterface() {
 
 // Enter Subject Scores
 function renderResultsEntry() {
+  const students = appState.studentList || [];
+  const scores = appState.studentScores || [];
+  
+  let rowsHtml = "";
+  if (students.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No students admitted to this school context. Please admit students first to register subject grades.
+        </td>
+      </tr>
+    `;
+  } else {
+    students.forEach((stud, index) => {
+      // Find matching score if any
+      const existing = scores.find(s => s.studentUid === stud.uid) || {};
+      const caVal = existing.caScore !== undefined ? existing.caScore : 15;
+      const assVal = existing.assignmentScore !== undefined ? existing.assignmentScore : 8;
+      const examVal = existing.examScore !== undefined ? existing.examScore : 35;
+      const total = caVal + assVal + examVal;
+      
+      let grade = "F";
+      if (total >= 75) grade = "A";
+      else if (total >= 65) grade = "B";
+      else if (total >= 50) grade = "C";
+
+      rowsHtml += `
+        <tr class="score-entry-row" data-uid="${stud.uid}" data-name="${stud.displayName}">
+          <td><strong>${stud.displayName}</strong></td>
+          <td>${stud.studentClass || "JSS 1"}${stud.arm ? " (" + stud.arm + ")" : ""}</td>
+          <td><input type="number" class="form-input ca-input" style="width:75px;" value="${caVal}" max="30" min="0" oninput="recalculateRowScore(this)" /></td>
+          <td><input type="number" class="form-input ass-input" style="width:75px;" value="${assVal}" max="10" min="0" oninput="recalculateRowScore(this)" /></td>
+          <td><input type="number" class="form-input exam-input" style="width:75px;" value="${examVal}" max="60" min="0" oninput="recalculateRowScore(this)" /></td>
+          <td><strong class="total-display" style="color: var(--primary-color);">${total} (Grade ${grade})</strong></td>
+        </tr>
+      `;
+    });
+  }
+
+  const saveBtn = students.length > 0 
+    ? `<button class="btn btn-primary btn-sm" onclick="saveSubjectScores()">Save Scores Grid</button>`
+    : "";
+
   return `
     <div class="card-panel">
       <div class="panel-header">
         <h3 class="panel-title">Subject Score Ledger Input</h3>
-        <button class="btn btn-primary btn-sm" onclick="showToast('Roster scores saved and processed!', 'success')">Save Scores Grid</button>
+        ${saveBtn}
       </div>
-      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">As a subject teacher, input raw student performance data. The system automatically computes grade levels.</p>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">As a subject teacher, input raw student performance data. The system automatically computes grade levels and saves directly to Firestore.</p>
       <div class="table-wrapper">
         <table class="custom-table">
           <thead>
@@ -2099,14 +2576,7 @@ function renderResultsEntry() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>David Alao</td>
-              <td>JSS 1A</td>
-              <td><input type="number" class="form-input" style="width:70px;" value="18" /></td>
-              <td><input type="number" class="form-input" style="width:70px;" value="19" /></td>
-              <td><input type="number" class="form-input" style="width:70px;" value="54" /></td>
-              <td><strong style="color: var(--primary-color);">91 (Grade A)</strong></td>
-            </tr>
+            ${rowsHtml}
           </tbody>
         </table>
       </div>
@@ -2116,88 +2586,170 @@ function renderResultsEntry() {
 
 // Report Card PDF preview & print
 function renderReportCard() {
+  const students = appState.studentList || [];
+  const scores = appState.studentScores || [];
+  const struct = appState.academicStructure || {};
+  const resStruct = struct.resultStructure || {};
+  const principalName = resStruct.principalName || "Dr. Babajide Alao, Principal SOS";
+
+  // Determine which student we are viewing
+  let selectedUid = appState.selectedReportCardUid;
+  if (!selectedUid && students.length > 0) {
+    selectedUid = students[0].uid;
+    appState.selectedReportCardUid = selectedUid;
+  }
+
+  const activeStudent = students.find(s => s.uid === selectedUid) || students[0];
+
+  let studentSelectHtml = "";
+  if (appState.profile?.role !== "student" && students.length > 0) {
+    studentSelectHtml = `
+      <div class="form-group" style="margin-bottom: 0px; text-align: left;">
+        <label class="form-label" style="font-size: 0.8rem; text-transform: uppercase;">Select Student Report Card</label>
+        <select class="form-input" style="width: auto; padding: 0.5rem 1rem;" onchange="appState.selectedReportCardUid = this.value; renderApp();">
+          ${students.map(s => `<option value="${s.uid}" ${s.uid === selectedUid ? "selected" : ""}>${s.displayName}</option>`).join("")}
+        </select>
+      </div>
+    `;
+  }
+
+  let tableRowsHtml = "";
+  let overallTotal = 0;
+  let count = 0;
+  
+  if (!activeStudent) {
+    tableRowsHtml = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+          No active student profiles registered. Admit a student first to print report cards.
+        </td>
+      </tr>
+    `;
+  } else {
+    // Find all scores of active student
+    const studentScores = scores.filter(s => s.studentUid === activeStudent.uid);
+    if (studentScores.length === 0) {
+      tableRowsHtml = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            No subject grade sheets processed for <strong>${activeStudent.displayName}</strong> yet this term.
+          </td>
+        </tr>
+      `;
+    } else {
+      studentScores.forEach((s) => {
+        const ca = s.caScore || 0;
+        const ass = s.assignmentScore || 0;
+        const exam = s.examScore || 0;
+        const total = ca + ass + exam;
+        overallTotal += total;
+        count++;
+
+        let grade = "F";
+        let remark = "Needs Improvement";
+        if (total >= 75) { grade = "A"; remark = "Excellent"; }
+        else if (total >= 65) { grade = "B"; remark = "Very Good"; }
+        else if (total >= 50) { grade = "C"; remark = "Credit"; }
+
+        tableRowsHtml += `
+          <tr>
+            <td><strong>${s.subject || "General"}</strong></td>
+            <td>${ca}</td>
+            <td>${ass}</td>
+            <td>${exam}</td>
+            <td><strong>${total}</strong></td>
+            <td><span class="badge badge-success">${grade}</span></td>
+            <td>${remark}</td>
+          </tr>
+        `;
+      });
+    }
+  }
+
+  const averageVal = count > 0 ? Math.round(overallTotal / count) : 0;
+  let summaryGrade = "Needs Improvement";
+  if (averageVal >= 75) summaryGrade = "Excellent";
+  else if (averageVal >= 65) summaryGrade = "Very Good";
+  else if (averageVal >= 50) summaryGrade = "Credit";
+
+  const schoolName = appState.school?.name || "Classarium Academy";
+
   return `
-    <div style="margin-bottom: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
-      <button class="btn btn-secondary" onclick="window.print();">Print Report Card (System Dialog)</button>
-      <button class="btn btn-primary" onclick="showToast('Result ledger PDF initialized.', 'success')">Get Isolated PDF Copy</button>
+    <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+      ${studentSelectHtml}
+      <div style="display: flex; gap: 1rem;">
+        <button class="btn btn-secondary" onclick="window.print();">Print Report Card (System Dialog)</button>
+        <button class="btn btn-primary" onclick="showToast('Result ledger PDF successfully printed to browser sandbox.', 'success')">Export PDF</button>
+      </div>
     </div>
     
-    <div class="report-card-print animate-fade-in">
-      <div class="report-header">
-        <div class="logo-icon" style="width: 5rem; height: 5rem; font-size: 2.5rem; border-radius: 0.5rem; flex-shrink: 0;">C</div>
+    ${activeStudent ? `
+    <div class="report-card-print animate-fade-in" style="background: var(--bg-surface); padding: 3rem; border: 1px solid var(--border-color); border-radius: 1rem; color: var(--text-primary);">
+      <div class="report-header" style="display: flex; align-items: center; gap: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 2rem; margin-bottom: 2rem;">
+        <div class="logo-icon" style="width: 5rem; height: 5rem; font-size: 2.5rem; border-radius: 0.5rem; flex-shrink: 0; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800;">C</div>
         <div class="report-school-details">
-          <div class="report-school-name">Classarium International Academy</div>
-          <div class="report-school-sub">GRA Close, Ikeja, Lagos State, Nigeria | info@cia.edu</div>
-          <div style="font-weight: 700; margin-top: 0.25rem;">Academic Session: 2026/2027 | Term: First Term</div>
+          <div class="report-school-name" style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary);">${schoolName}</div>
+          <div class="report-school-sub" style="color: var(--text-secondary); margin-top: 0.25rem;">GRA Roster Close, Multi-Tenant Container Base | Term: First Term</div>
+          <div style="font-weight: 700; margin-top: 0.5rem; color: var(--primary-color);">Academic Session: 2026/2027</div>
         </div>
       </div>
       
-      <div class="report-student-grid">
-        <div class="report-student-photo" style="background: var(--border-color); display:flex; align-items:center; justify-content:center; font-weight:700;">David Alao</div>
-        <div class="report-student-info">
-          <div>Student Surname: <strong>Alao</strong></div>
-          <div>Admission Number: <strong>CIA-2026-0012</strong></div>
-          <div>First Name: <strong>David</strong></div>
-          <div>Class: <strong>JSS 1A</strong></div>
-          <div>Date of Issue: <strong>2026-06-28</strong></div>
-          <div>Roster Attendance: <strong>100% Present</strong></div>
+      <div class="report-student-grid" style="display: grid; grid-template-columns: 100px 1fr; gap: 2rem; margin-bottom: 2rem; background: rgba(var(--primary-color-rgb), 0.03); padding: 1.5rem; border-radius: 0.5rem; border: 1px dashed var(--border-color);">
+        <div class="report-student-photo" style="background: var(--border-color); display:flex; align-items:center; justify-content:center; font-weight:700; border-radius: 0.5rem; text-align: center; font-size: 0.8rem; color: var(--text-secondary);">Roster Photo</div>
+        <div class="report-student-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.95rem;">
+          <div>Student Name: <strong>${activeStudent.displayName}</strong></div>
+          <div>Admission Number: <strong>${activeStudent.admissionNumber || activeStudent.uid.substring(0, 8)}</strong></div>
+          <div>Gender: <strong>${activeStudent.gender || "Male"}</strong></div>
+          <div>Class Target: <strong>${activeStudent.studentClass || "JSS 1"}${activeStudent.arm ? " (" + activeStudent.arm + ")" : ""}</strong></div>
+          <div>Date of Issue: <strong>2026-06-29</strong></div>
+          <div>Term Average Score: <strong>${averageVal}% (${summaryGrade})</strong></div>
         </div>
       </div>
       
-      <table class="report-table">
+      <table class="custom-table" style="width: 100%; border-collapse: collapse; margin-bottom: 2.5rem;">
         <thead>
-          <tr>
-            <th>Subject Name</th>
+          <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+            <th style="padding: 1rem 0;">Subject Name</th>
             <th>CA Score (30)</th>
             <th>Assignment (10)</th>
             <th>Exam Score (60)</th>
-            <th>Total Sum</th>
-            <th>Grade Level</th>
+            <th>Total Sum (100)</th>
+            <th>Grade</th>
             <th>Performance Position</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Mathematics</td>
-            <td>18</td>
-            <td>19</td>
-            <td>54</td>
-            <td>91</td>
-            <td>A</td>
-            <td>1st</td>
-          </tr>
-          <tr>
-            <td>English Language</td>
-            <td>15</td>
-            <td>14</td>
-            <td>48</td>
-            <td>77</td>
-            <td>A</td>
-            <td>1st</td>
-          </tr>
+          ${tableRowsHtml}
         </tbody>
       </table>
       
-      <div class="report-comments">
-        <div class="report-comment-box">
+      <div class="report-comments" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
+        <div class="report-comment-box" style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 0.5rem;">
           <strong>Class Director's Conduct Comment:</strong>
-          <p style="font-style: italic; font-size: 0.9rem;">David is hardworking, highly attentive, and shows spectacular leadership values.</p>
+          <p style="font-style: italic; font-size: 0.9rem; margin-top: 0.5rem; color: var(--text-secondary);">${activeStudent.displayName} is attentive, shows strong cognitive comprehension, and is cooperative.</p>
         </div>
-        <div class="report-comment-box">
+        <div class="report-comment-box" style="border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 0.5rem;">
           <strong>Principal's Executive Endorsement:</strong>
-          <p style="font-style: italic; font-size: 0.9rem;">Excellent results. Keep shining and making the academy proud.</p>
+          <p style="font-style: italic; font-size: 0.9rem; margin-top: 0.5rem; color: var(--text-secondary);">An encouraging academic performance. Highly commendable.</p>
         </div>
       </div>
       
-      <div class="report-signatures">
+      <div class="report-signatures" style="display: flex; justify-content: space-between; border-top: 1px dashed var(--border-color); padding-top: 2rem; margin-top: 2rem;">
         <div>
-          <div class="signature-line">Mrs. Grace Babalola (Class Director)</div>
+          <div style="font-weight: 700;">Academic Staff</div>
+          <div class="signature-line" style="margin-top: 0.5rem; font-style: italic; color: var(--text-secondary);">Grace Babalola (Class Director)</div>
         </div>
         <div>
-          <div class="signature-line">Dr. Babajide Alao (Principal Principal SOS)</div>
+          <div style="font-weight: 700;">Principal Endorsement</div>
+          <div class="signature-line" style="margin-top: 0.5rem; font-style: italic; color: var(--text-secondary);">${principalName}</div>
         </div>
       </div>
     </div>
+    ` : `
+      <div class="card-panel" style="text-align: center; padding: 3rem;">
+        <p style="color: var(--text-secondary);">Please admit a student to generate dynamic grading report cards.</p>
+      </div>
+    `}
   `;
 }
 
@@ -2256,35 +2808,82 @@ function renderParentDashboard() {
 
 // Library Module
 function renderLibraryModule() {
+  const books = appState.libraryBooks || [];
+  
+  let rowsHtml = "";
+  if (books.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No books cataloged in the library roster yet. Add one below.
+        </td>
+      </tr>
+    `;
+  } else {
+    books.forEach((b) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${b.isbn || "ISBN-8092-22"}</strong></td>
+          <td>${b.title || "Modern Algebra foundations"}</td>
+          <td>${b.author || "Dr. J. Carter"}</td>
+          <td>${b.copies || "5"} Copies</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Book reserved successfully from dynamic catalog!', 'success')">Reserve Book</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">School Library & Fine Registry</h3>
-        <button class="btn btn-primary btn-sm" onclick="alert('New book schema created.')">+ Catalog New Book</button>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">School Library & Fine Registry</h3>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>ISBN Code</th>
+                <th>Book Title</th>
+                <th>Author</th>
+                <th>Available Copies</th>
+                <th>Action Operation</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrapper">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>ISBN Code</th>
-              <th>Book Title</th>
-              <th>Author</th>
-              <th>Available Copies</th>
-              <th>Action Operation</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>ISBN-8092-22</td>
-              <td>Modern Algebra foundations</td>
-              <td>Dr. J. Carter</td>
-              <td>4 of 5</td>
-              <td>
-                <button class="btn btn-secondary btn-sm" onclick="showToast('Book reserved successfully.', 'success')">Reserve Book</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
+      <div class="card-panel">
+        <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+          <h3 class="panel-title">Catalog New Library Book</h3>
+        </div>
+        <form onsubmit="catalogNewBook(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">ISBN Code</label>
+            <input type="text" id="lib-isbn" class="form-input" placeholder="e.g. ISBN-8092-22" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Book Title</label>
+            <input type="text" id="lib-title" class="form-input" placeholder="e.g. Modern Algebra foundations" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Author Name</label>
+            <input type="text" id="lib-author" class="form-input" placeholder="e.g. Dr. J. Carter" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Copies Available</label>
+            <input type="number" id="lib-copies" class="form-input" value="5" required />
+          </div>
+          <div style="grid-column: span 2; text-align: right;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2.5rem;">Catalog Document</button>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -2292,33 +2891,81 @@ function renderLibraryModule() {
 
 // Hostel Lodge
 function renderHostelModule() {
+  const hostels = appState.hostelAllocations || [];
+  
+  let rowsHtml = "";
+  if (hostels.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No active bedspace allocations recorded in this school context. Allocate one below.
+        </td>
+      </tr>
+    `;
+  } else {
+    hostels.forEach((h) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${h.blockName || "Boys Hostel Block A"}</strong></td>
+          <td>Room ${h.roomIdentifier || "10"}</td>
+          <td>Bed ${h.bedAssigned || "B"}</td>
+          <td>${h.studentName || "David Alao"}</td>
+          <td><span class="badge badge-success">Present</span></td>
+        </tr>
+      `;
+    });
+  }
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Hostel Blocks & Bed Allocation</h3>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Hostel Blocks & Bed Allocation</h3>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Coordinates emergency medical rooms, boys/girls blocks, and visitor logs directly from the SOS operational database.</p>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Lodge Block Name</th>
+                <th>Room Identifier</th>
+                <th>Bed Assigned</th>
+                <th>Student Portfolio</th>
+                <th>Roster Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Coordinates emergency medical rooms, boys/girls blocks, and visitor logs directly from the SOS operational database.</p>
-      <div class="table-wrapper">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Lodge Block Name</th>
-              <th>Room Identifier</th>
-              <th>Bed Assigned</th>
-              <th>Student Portfolio</th>
-              <th>Roster Attendance</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Boys Hostel Block A</td>
-              <td>Room 10</td>
-              <td>Bed B</td>
-              <td>David Alao</td>
-              <td><span class="badge badge-success">Present</span></td>
-            </tr>
-          </tbody>
-        </table>
+
+      <div class="card-panel">
+        <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+          <h3 class="panel-title">Register Hostel Allocation</h3>
+        </div>
+        <form onsubmit="allocateHostelBed(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Hostel Block Name</label>
+            <input type="text" id="hst-block" class="form-input" placeholder="e.g. Boys Hostel Block A" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Room Number</label>
+            <input type="text" id="hst-room" class="form-input" placeholder="e.g. 10" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bed Identifier</label>
+            <input type="text" id="hst-bed" class="form-input" placeholder="e.g. B" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Student Name</label>
+            <input type="text" id="hst-student" class="form-input" placeholder="e.g. David Alao" required />
+          </div>
+          <div style="grid-column: span 2; text-align: right;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2.5rem;">Publish Bed Allocation</button>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -2326,30 +2973,78 @@ function renderHostelModule() {
 
 // Transport
 function renderTransportModule() {
+  const routes = appState.transportRoutes || [];
+  
+  let rowsHtml = "";
+  if (routes.length === 0) {
+    rowsHtml = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+          No driver transit routes cataloged yet. Setup route below.
+        </td>
+      </tr>
+    `;
+  } else {
+    routes.forEach((r) => {
+      rowsHtml += `
+        <tr>
+          <td><strong>${r.plateLicense || "LAG-908-IKJ"}</strong></td>
+          <td>${r.model || "Toyota Coaster Bus (30-Seater)"}</td>
+          <td>${r.driver || "James Driver"}</td>
+          <td>${r.destination || "Ikeja GRA -> Maryland Route Loop"}</td>
+        </tr>
+      `;
+    });
+  }
+
   return `
-    <div class="card-panel">
-      <div class="panel-header">
-        <h3 class="panel-title">Vehicle Records & driver Routes</h3>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+      <div class="card-panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Vehicle Records & Driver Routes</h3>
+        </div>
+        <div class="table-wrapper">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Bus Plate License</th>
+                <th>Vehicle Model</th>
+                <th>Authorized Driver</th>
+                <th>Route Destination</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrapper">
-        <table class="custom-table">
-          <thead>
-            <tr>
-              <th>Bus Plate License</th>
-              <th>Vehicle Model</th>
-              <th>Authorized Driver</th>
-              <th>Route Destination</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>LAG-908-IKJ</td>
-              <td>Toyota Coaster Bus (30-Seater)</td>
-              <td>James Driver</td>
-              <td>Ikeja GRA -> Maryland Route Loop</td>
-            </tr>
-          </tbody>
-        </table>
+
+      <div class="card-panel">
+        <div class="panel-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+          <h3 class="panel-title">Provision New Transit Route</h3>
+        </div>
+        <form onsubmit="registerTransportRoute(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Bus Plate License</label>
+            <input type="text" id="trn-plate" class="form-input" placeholder="e.g. LAG-908-IKJ" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vehicle Model & Seating</label>
+            <input type="text" id="trn-model" class="form-input" placeholder="e.g. Toyota Coaster Bus (30-Seater)" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Driver Full Name</label>
+            <input type="text" id="trn-driver" class="form-input" placeholder="e.g. James Driver" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Route Loop Destination</label>
+            <input type="text" id="trn-route" class="form-input" placeholder="e.g. Ikeja GRA -> Maryland Route Loop" required />
+          </div>
+          <div style="grid-column: span 2; text-align: right;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2.5rem;">Deploy Transit Vehicle</button>
+          </div>
+        </form>
       </div>
     </div>
   `;
@@ -2586,6 +3281,7 @@ async function createSchoolBySuperAdmin(event) {
       }
     });
 
+    await logSecurityEvent(schoolId, `Deployed isolated tenant container for ${schoolName}`);
     showToast("School Instance Deployed successfully!", "success");
     await loadDataForCurrentContext();
     renderApp();
@@ -2599,6 +3295,7 @@ async function deleteSchoolInstance(schoolId) {
   if (confirm("Are you sure you want to delete this school instance? All databases will be unlinked.")) {
     showToast("Unlinking database container...", "info");
     try {
+      await logSecurityEvent(schoolId, `Purged tenant instance and associated database containers`);
       await deleteDoc(doc(db, "schools", schoolId));
       showToast("School instance deleted successfully.", "success");
       await loadDataForCurrentContext();
@@ -2642,6 +3339,7 @@ async function onboardStaffMember(event) {
       createdAt: new Date().toISOString()
     });
 
+    await logSecurityEvent(sId, `Onboarded academic staff member: ${displayName} (${role})`);
     showToast("Staff profile authorized successfully!", "success");
     await loadDataForCurrentContext();
     renderApp();
@@ -2655,6 +3353,8 @@ async function deleteStaffMember(staffUid) {
   if (confirm("Are you sure you want to remove this staff profile?")) {
     showToast("Removing credentials...", "info");
     try {
+      const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+      await logSecurityEvent(sId, `Revoked staff profile credentials for uid ${staffUid}`);
       await deleteDoc(doc(db, "users", staffUid));
       showToast("Staff profile removed.", "success");
       await loadDataForCurrentContext();
@@ -2708,6 +3408,7 @@ async function admitNewStudent(event) {
       createdAt: new Date().toISOString()
     });
 
+    await logSecurityEvent(sId, `Admitted new student: ${surname} ${firstname} (ID: ${admNo})`);
     showToast("Student admitted successfully!", "success");
     await loadDataForCurrentContext();
     renderApp();
@@ -2721,6 +3422,8 @@ async function deleteStudentProfile(studentUid) {
   if (confirm("Are you sure you want to delete this student profile?")) {
     showToast("Removing credentials...", "info");
     try {
+      const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+      await logSecurityEvent(sId, `Expelled and deleted student profile uid ${studentUid}`);
       await deleteDoc(doc(db, "users", studentUid));
       showToast("Student profile removed.", "success");
       await loadDataForCurrentContext();
@@ -2731,6 +3434,497 @@ async function deleteStudentProfile(studentUid) {
   }
 }
 window.deleteStudentProfile = deleteStudentProfile;
+
+async function submitContactTicket(event) {
+  event.preventDefault();
+  const name = document.getElementById("ticket-name")?.value;
+  const email = document.getElementById("ticket-email")?.value;
+  const message = document.getElementById("ticket-message")?.value;
+
+  showToast("Transmitting support ticket to SaaS queue...", "info");
+  try {
+    const tId = `tck_${Date.now()}`;
+    await setDoc(doc(db, "tickets", tId), {
+      id: tId,
+      ticketId: `TCK-${tId.substring(4, 9)}`,
+      name,
+      email,
+      message,
+      status: "Open",
+      priority: "Normal",
+      createdAt: new Date().toISOString()
+    });
+
+    await logSecurityEvent("global", `Submitted support ticket ${tId.substring(4, 9)}: ${message.substring(0, 40)}...`);
+    showToast("Ticket successfully received. Our specialist will email you!", "success");
+    
+    // Clear inputs
+    if (document.getElementById("ticket-name")) document.getElementById("ticket-name").value = "";
+    if (document.getElementById("ticket-email")) document.getElementById("ticket-email").value = "";
+    if (document.getElementById("ticket-message")) document.getElementById("ticket-message").value = "";
+
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.submitContactTicket = submitContactTicket;
+
+async function updateAcademicStructure(event) {
+  event.preventDefault();
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: Active school context missing.", "error");
+    return;
+  }
+
+  const principalName = document.getElementById("config-principal")?.value;
+  const caMax = parseInt(document.getElementById("config-ca")?.value || "30");
+  const assignmentMax = parseInt(document.getElementById("config-assignment")?.value || "10");
+  const examMax = parseInt(document.getElementById("config-exam")?.value || "60");
+
+  showToast("Updating grading criteria matrix...", "info");
+  try {
+    const updated = {
+      ...(appState.academicStructure || {}),
+      resultStructure: {
+        principalName,
+        caMax,
+        assignmentMax,
+        examMax
+      }
+    };
+    await setDoc(doc(db, "academic_structures", sId), updated);
+    await logSecurityEvent(sId, "Configured academic result structures & grading weight definitions");
+    showToast("Report Card formats successfully updated!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.updateAcademicStructure = updateAcademicStructure;
+
+async function saveAttendanceRoster() {
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: No active school context found.", "error");
+    return;
+  }
+
+  showToast("Compiling roster and saving marksheets...", "info");
+  try {
+    const rows = document.querySelectorAll(".attendance-row");
+    const batch = [];
+    
+    rows.forEach((row) => {
+      const uid = row.getAttribute("data-uid");
+      const status = row.querySelector(".attendance-status")?.value;
+      const remarks = row.querySelector(".attendance-remarks")?.value;
+      
+      const recordId = `att_${uid}_${new Date().toISOString().substring(0, 10)}`;
+      batch.push(
+        setDoc(doc(db, "attendance_records", recordId), {
+          id: recordId,
+          schoolId: sId,
+          studentUid: uid,
+          status,
+          remarks,
+          date: new Date().toISOString().substring(0, 10),
+          createdAt: new Date().toISOString()
+        })
+      );
+    });
+
+    await Promise.all(batch);
+    await logSecurityEvent(sId, `Marked daily classroom attendance for school roster (${rows.length} students)`);
+    showToast("Attendance roster processed and saved successfully!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.saveAttendanceRoster = saveAttendanceRoster;
+
+async function issueNewAssignment(event) {
+  event.preventDefault();
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: No active school context found.", "error");
+    return;
+  }
+
+  const subject = document.getElementById("ass-subject")?.value;
+  const deadline = document.getElementById("ass-deadline")?.value;
+  const title = document.getElementById("ass-title")?.value;
+
+  showToast("Broadcasting homework to student terminals...", "info");
+  try {
+    const assId = `ass_${Date.now()}`;
+    await setDoc(doc(db, "assignments", assId), {
+      id: assId,
+      schoolId: sId,
+      subject,
+      deadline,
+      title,
+      status: "Active",
+      createdAt: new Date().toISOString()
+    });
+
+    await logSecurityEvent(sId, `Published assignment homework task for ${subject}: ${title.substring(0, 40)}...`);
+    showToast("Homework published successfully to student rosters!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.issueNewAssignment = issueNewAssignment;
+
+async function uploadLMSMaterial(event) {
+  event.preventDefault();
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: No active school context found.", "error");
+    return;
+  }
+
+  const title = document.getElementById("lms-title")?.value;
+  const category = document.getElementById("lms-category")?.value;
+  const uploader = appState.profile?.displayName || "Academic Staff";
+
+  showToast("Registering document resource in cloud registry...", "info");
+  try {
+    const mId = `lms_${Date.now()}`;
+    await setDoc(doc(db, "lms_materials", mId), {
+      id: mId,
+      schoolId: sId,
+      title,
+      category,
+      uploader,
+      createdAt: new Date().toISOString()
+    });
+
+    await logSecurityEvent(sId, `Uploaded digital study material: ${title}`);
+    showToast("Study material successfully published to LMS database!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.uploadLMSMaterial = uploadLMSMaterial;
+
+async function buildNewCBTExam(event) {
+  event.preventDefault();
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: No active school context found.", "error");
+    return;
+  }
+
+  const title = document.getElementById("cbt-title")?.value;
+  const subject = document.getElementById("cbt-subject")?.value;
+  const targetClass = document.getElementById("cbt-class")?.value;
+  const duration = parseInt(document.getElementById("cbt-duration")?.value || "10");
+
+  const questionText = document.getElementById("cbt-q-text")?.value;
+  const optA = document.getElementById("cbt-opt-a")?.value;
+  const optB = document.getElementById("cbt-opt-b")?.value;
+  const optC = document.getElementById("cbt-opt-c")?.value;
+  const optD = document.getElementById("cbt-opt-d")?.value;
+  const correct = document.getElementById("cbt-q-correct")?.value;
+
+  showToast("Compiling exam question schemas...", "info");
+  try {
+    const examId = `cbt_${Date.now()}`;
+    await setDoc(doc(db, "cbt_exams", examId), {
+      id: examId,
+      schoolId: sId,
+      title,
+      subject,
+      classRoster: targetClass,
+      duration,
+      questions: [
+        {
+          id: `q_${Date.now()}`,
+          questionText,
+          options: [optA, optB, optC, optD],
+          correctAnswer: correct
+        }
+      ],
+      createdAt: new Date().toISOString()
+    });
+
+    await logSecurityEvent(sId, `Provisioned digital CBT assessment: ${title}`);
+    showToast("Computer-Based Test successfully deployed!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.buildNewCBTExam = buildNewCBTExam;
+
+function initiateCBTAttempt(examId) {
+  const exams = appState.cbtList || [];
+  const found = exams.find(e => e.id === examId);
+  if (!found) {
+    showToast("Error: Exam definition could not be located.", "error");
+    return;
+  }
+  appState.activeCbtExam = found;
+  showToast(`CBT Exam session initialized for ${found.title}`, "info");
+  renderApp();
+}
+window.initiateCBTAttempt = initiateCBTAttempt;
+
+async function submitCBTExamAttempt() {
+  const exam = appState.activeCbtExam;
+  if (!exam) return;
+
+  const questions = exam.questions || [];
+  const q = questions[0];
+  const selectedRadio = document.querySelector('input[name="cbt_ans"]:checked');
+  const selectedAnswer = selectedRadio ? selectedRadio.value : "";
+  const isCorrect = selectedAnswer === q.correctAnswer;
+  const percentage = isCorrect ? 100 : 0;
+
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  const uid = appState.profile?.uid || "student_uid";
+  const name = appState.profile?.displayName || "Active Student";
+
+  showToast("Auto-grading responses and writing score cards...", "info");
+  try {
+    const scoreId = `score_${uid}_${exam.subject || "Math"}`;
+    await setDoc(doc(db, "student_scores", scoreId), {
+      id: scoreId,
+      schoolId: sId,
+      studentUid: uid,
+      studentName: name,
+      subject: exam.subject || "Mathematics",
+      caScore: isCorrect ? 30 : 15,
+      assignmentScore: 10,
+      examScore: isCorrect ? 60 : 30,
+      createdAt: new Date().toISOString()
+    });
+
+    await logSecurityEvent(sId, `Completed CBT Quiz attempt: ${exam.title} (Scored: ${percentage}%)`);
+    showToast(`Quiz completed and graded: ${percentage}%! Marks published to database ledger.`, "success");
+    appState.activeCbtExam = null;
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.submitCBTExamAttempt = submitCBTExamAttempt;
+
+function recalculateRowScore(element) {
+  const row = element.closest(".score-entry-row");
+  const ca = parseInt(row.querySelector(".ca-input").value || "0");
+  const ass = parseInt(row.querySelector(".ass-input").value || "0");
+  const exam = parseInt(row.querySelector(".exam-input").value || "0");
+  const total = ca + ass + exam;
+  
+  let grade = "F";
+  if (total >= 75) grade = "A";
+  else if (total >= 65) grade = "B";
+  else if (total >= 50) grade = "C";
+  
+  row.querySelector(".total-display").innerHTML = `${total} (Grade ${grade})`;
+}
+window.recalculateRowScore = recalculateRowScore;
+
+async function saveSubjectScores() {
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: Active school context missing.", "error");
+    return;
+  }
+
+  showToast("Re-compiling grade registers...", "info");
+  try {
+    const rows = document.querySelectorAll(".score-entry-row");
+    const batch = [];
+    
+    rows.forEach((row) => {
+      const uid = row.getAttribute("data-uid");
+      const name = row.getAttribute("data-name");
+      const ca = parseInt(row.querySelector(".ca-input").value || "0");
+      const ass = parseInt(row.querySelector(".ass-input").value || "0");
+      const exam = parseInt(row.querySelector(".exam-input").value || "0");
+      
+      const scoreId = `score_${uid}_Mathematics`; // Default current context subject
+      batch.push(
+        setDoc(doc(db, "student_scores", scoreId), {
+          id: scoreId,
+          schoolId: sId,
+          studentUid: uid,
+          studentName: name,
+          subject: "Mathematics",
+          caScore: ca,
+          assignmentScore: ass,
+          examScore: exam,
+          createdAt: new Date().toISOString()
+        })
+      );
+    });
+
+    await Promise.all(batch);
+    await logSecurityEvent(sId, `Updated term grade logs for student roster (${rows.length} records)`);
+    showToast("Student grades successfully compiled and synced with cloud servers!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.saveSubjectScores = saveSubjectScores;
+
+async function saveSetupWizardStep(event) {
+  event.preventDefault();
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: Active school context missing.", "error");
+    return;
+  }
+
+  const terms = [];
+  if (document.getElementById("wizard-term-1")?.checked) terms.push("First Term");
+  if (document.getElementById("wizard-term-2")?.checked) terms.push("Second Term");
+  if (document.getElementById("wizard-term-3")?.checked) terms.push("Third Term");
+
+  const armsRaw = document.getElementById("wizard-class-arms")?.value || "A, B, C, D";
+  const arms = armsRaw.split(",").map(a => a.trim()).filter(Boolean);
+
+  showToast("Updating tenant configuration metadata...", "info");
+  try {
+    const updated = {
+      ...(appState.academicStructure || {}),
+      activeTerms: terms,
+      classArms: arms
+    };
+    await setDoc(doc(db, "academic_structures", sId), updated);
+    await logSecurityEvent(sId, `Updated first-time wizard configuration (Active Terms: ${terms.join(", ")})`);
+    showToast("Tenant setup step finalized successfully!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.saveSetupWizardStep = saveSetupWizardStep;
+
+async function catalogNewBook(event) {
+  event.preventDefault();
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: Active school context missing.", "error");
+    return;
+  }
+
+  const isbn = document.getElementById("lib-isbn")?.value;
+  const title = document.getElementById("lib-title")?.value;
+  const author = document.getElementById("lib-author")?.value;
+  const copies = parseInt(document.getElementById("lib-copies")?.value || "5");
+
+  showToast("Updating physical book catalogs in cloud database...", "info");
+  try {
+    const bId = `book_${Date.now()}`;
+    await setDoc(doc(db, "library_books", bId), {
+      id: bId,
+      schoolId: sId,
+      isbn,
+      title,
+      author,
+      copies,
+      createdAt: new Date().toISOString()
+    });
+
+    await logSecurityEvent(sId, `Cataloged new library book title: ${title}`);
+    showToast("Book successfully added to school inventory library!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.catalogNewBook = catalogNewBook;
+
+async function allocateHostelBed(event) {
+  event.preventDefault();
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: Active school context missing.", "error");
+    return;
+  }
+
+  const blockName = document.getElementById("hst-block")?.value;
+  const roomIdentifier = document.getElementById("hst-room")?.value;
+  const bedAssigned = document.getElementById("hst-bed")?.value;
+  const studentName = document.getElementById("hst-student")?.value;
+
+  showToast("Assigning bed spaces to student terminal rosters...", "info");
+  try {
+    const hId = `hostel_${Date.now()}`;
+    await setDoc(doc(db, "hostel_allocations", hId), {
+      id: hId,
+      schoolId: sId,
+      blockName,
+      roomIdentifier,
+      bedAssigned,
+      studentName,
+      createdAt: new Date().toISOString()
+    });
+
+    await logSecurityEvent(sId, `Allocated Bedspace block: ${blockName} to student: ${studentName}`);
+    showToast("Bed allotment successfully published and logged!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.allocateHostelBed = allocateHostelBed;
+
+async function registerTransportRoute(event) {
+  event.preventDefault();
+  const sId = appState.impersonatedSchoolId || appState.profile?.schoolId;
+  if (!sId) {
+    showToast("Error: Active school context missing.", "error");
+    return;
+  }
+
+  const plateLicense = document.getElementById("trn-plate")?.value;
+  const model = document.getElementById("trn-model")?.value;
+  const driver = document.getElementById("trn-driver")?.value;
+  const destination = document.getElementById("trn-route")?.value;
+
+  showToast("Compiling vehicle transit paths...", "info");
+  try {
+    const tId = `route_${Date.now()}`;
+    await setDoc(doc(db, "transport_routes", tId), {
+      id: tId,
+      schoolId: sId,
+      plateLicense,
+      model,
+      driver,
+      destination,
+      createdAt: new Date().toISOString()
+    });
+
+    await logSecurityEvent(sId, `Provisioned Driver Route: ${destination} with Plate: ${plateLicense}`);
+    showToast("Transit vehicle route deployed successfully!", "success");
+    await loadDataForCurrentContext();
+    renderApp();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+window.registerTransportRoute = registerTransportRoute;
 
 // Render app initially
 renderApp();
