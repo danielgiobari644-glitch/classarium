@@ -2114,5 +2114,12 @@ function setupSaaSInteractivity() {
   }
 }
 
+// Bind core module functions to window to make them globally accessible in the DOM
+window.handleAuthSubmit = handleAuthSubmit;
+window.navigateTo = navigateTo;
+window.toggleTheme = toggleTheme;
+window.showToast = showToast;
+window.sendChatMessage = sendChatMessage;
+
 // Render app initially
 renderApp();
