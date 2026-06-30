@@ -71,6 +71,7 @@ const appState = {
   libraryList: [],   // Catalogued books
   hostelList: [],    // Hostel allocations
   transportList: [], // Transport routes
+  attendanceRecords: [], // Daily attendance records
   parentStudents: [] // Linked student children for parent view
 };
 
@@ -294,6 +295,17 @@ async function loadDataForCurrentContext() {
         });
       } catch (err) {
         console.error("Error loading vehicle routes:", err);
+      }
+
+      // Fetch Attendance records
+      try {
+        const attSnapshot = await getDocs(query(collection(db, "attendance_records"), where("schoolId", "==", sId)));
+        appState.attendanceRecords = [];
+        attSnapshot.forEach((docSnap) => {
+          appState.attendanceRecords.push(docSnap.data());
+        });
+      } catch (err) {
+        console.error("Error loading attendance records:", err);
       }
     } else {
       if (p.role === "super_admin" && !appState.impersonatedSchoolId) {
@@ -1235,28 +1247,38 @@ function renderDashboardOverview() {
 
   // School Admin Dashboard
   if (role === "school_admin") {
-    const studentsCount = appState.studentList ? appState.studentList.length : 1;
-    const staffCount = appState.staffList ? appState.staffList.length : 2;
+    const studentsCount = appState.studentList ? appState.studentList.length : 0;
+    const staffCount = appState.staffList ? appState.staffList.length : 0;
+    const examsCount = appState.cbtList ? appState.cbtList.length : 0;
+
+    const todayStr = new Date().toISOString().substring(0, 10);
+    const todayRecords = (appState.attendanceRecords || []).filter(r => r.date === todayStr);
+    let todayAttendancePercent = "100%";
+    if (todayRecords.length > 0) {
+      const presents = todayRecords.filter(r => r.status === "Present").length;
+      todayAttendancePercent = `${Math.round((presents / todayRecords.length) * 100)}%`;
+    }
+
     return `
       <div class="dashboard-grid">
         <div class="stat-card">
           <div class="stat-card-header">ADMITTED STUDENTS <span class="stat-card-icon">🎓</span></div>
-          <div class="stat-card-value">${studentsCount || 1}</div>
+          <div class="stat-card-value">${studentsCount}</div>
           <div class="stat-card-trend trend-up">✦ Fully Isolation container registered</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">STAFF ON DUTY <span class="stat-card-icon">🧑‍🏫</span></div>
-          <div class="stat-card-value">${staffCount || 2}</div>
+          <div class="stat-card-value">${staffCount}</div>
           <div class="stat-card-trend trend-up">✦ Active platform permissions</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">TODAY'S ATTENDANCE <span class="stat-card-icon">✅</span></div>
-          <div class="stat-card-value">100%</div>
+          <div class="stat-card-value">${todayAttendancePercent}</div>
           <div class="stat-card-trend trend-up">✦ Verified class rosters</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">CBT EXAMS SCHED <span class="stat-card-icon">💻</span></div>
-          <div class="stat-card-value">1</div>
+          <div class="stat-card-value">${examsCount}</div>
           <div class="stat-card-trend trend-up">✦ Timed Quiz Ready</div>
         </div>
       </div>
@@ -1302,34 +1324,45 @@ function renderDashboardOverview() {
 
   // Teacher / Class Manager Dashboard
   if (p.role === "teacher" || p.role === "class_manager") {
+    const studentsCount = appState.studentList ? appState.studentList.length : 0;
+    const lmsCount = appState.lmsList ? appState.lmsList.length : 0;
+    
+    let pendingCount = 0;
+    if (appState.studentList) {
+      appState.studentList.forEach(stud => {
+        const hasScore = (appState.studentScores || []).some(s => s.studentUid === stud.uid);
+        if (!hasScore) pendingCount++;
+      });
+    }
+
     return `
       <div class="dashboard-grid">
         <div class="stat-card">
           <div class="stat-card-header">ASSIGNED CLASSES <span class="stat-card-icon">🏫</span></div>
           <div class="stat-card-value">1</div>
-          <div class="stat-card-trend trend-up">✦ Primary: JSS 1A</div>
+          <div class="stat-card-trend trend-up">✦ Primary Classroom</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">MY STUDENTS <span class="stat-card-icon">🎓</span></div>
-          <div class="stat-card-value">1</div>
-          <div class="stat-card-trend trend-up">✦ Class: David Alao</div>
+          <div class="stat-card-value">${studentsCount}</div>
+          <div class="stat-card-trend trend-up">✦ Active student database profiles</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">PENDING SCORES <span class="stat-card-icon">📝</span></div>
-          <div class="stat-card-value">0</div>
+          <div class="stat-card-value">${pendingCount}</div>
           <div class="stat-card-trend trend-up">✓ Compiled report structures</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">LMS MATERIALS <span class="stat-card-icon">📚</span></div>
-          <div class="stat-card-value">3</div>
+          <div class="stat-card-value">${lmsCount}</div>
           <div class="stat-card-trend trend-up">✦ Study notes published</div>
         </div>
       </div>
 
       <div class="panel-grid">
-        <div class="card-panel">
+        <div class="card-panel" style="grid-column: span 2;">
           <div class="panel-header">
-            <h3 class="panel-title">Class Manager Overview (JSS 1A)</h3>
+            <h3 class="panel-title">Class Manager Overview</h3>
           </div>
           <div class="table-wrapper">
             <table class="custom-table">
@@ -1337,41 +1370,50 @@ function renderDashboardOverview() {
                 <tr>
                   <th>Student Name</th>
                   <th>Admission ID</th>
-                  <th>Attendance (June)</th>
+                  <th>Attendance Record</th>
                   <th>Merit Rating</th>
                   <th>Result Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>David Alao</td>
-                  <td>CIA-2026-0012</td>
-                  <td><span class="badge badge-success">100% Present</span></td>
-                  <td><span class="badge badge-info">10 Merit Points</span></td>
-                  <td><span class="badge badge-success">Generated & Published</span></td>
-                </tr>
+                ${
+                  appState.studentList && appState.studentList.length > 0
+                    ? appState.studentList.map(stud => {
+                        const myScores = (appState.studentScores || []).filter(s => s.studentUid === stud.uid);
+                        const statusBadge = myScores.length > 0 
+                          ? `<span class="badge badge-success">Generated & Published</span>` 
+                          : `<span class="badge badge-warning">Pending Scores</span>`;
+                        
+                        const studRecords = (appState.attendanceRecords || []).filter(r => r.studentUid === stud.uid);
+                        let attText = "No Record";
+                        let attBadgeClass = "badge-secondary";
+                        if (studRecords.length > 0) {
+                          const presentCount = studRecords.filter(r => r.status === "Present").length;
+                          const percent = Math.round((presentCount / studRecords.length) * 100);
+                          attText = `${percent}% Present`;
+                          attBadgeClass = percent >= 75 ? "badge-success" : "badge-danger";
+                        }
+
+                        return `
+                          <tr>
+                            <td><strong>${stud.displayName}</strong></td>
+                            <td>${stud.admissionNumber || "N/A"}</td>
+                            <td><span class="badge ${attBadgeClass}">${attText}</span></td>
+                            <td><span class="badge badge-info">Active</span></td>
+                            <td>${statusBadge}</td>
+                          </tr>
+                        `;
+                      }).join('')
+                    : `
+                      <tr>
+                        <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+                          No student records registered in this class roster yet.
+                        </td>
+                      </tr>
+                    `
+                }
               </tbody>
             </table>
-          </div>
-        </div>
-
-        <div class="card-panel">
-          <div class="panel-header">
-            <h3 class="panel-title">Class Tools</h3>
-          </div>
-          <div class="quick-action-grid">
-            <div class="quick-action-card" onclick="navigateTo('attendance')">
-              <div class="quick-action-icon">✅</div>
-              <div class="quick-action-label">Attendance</div>
-            </div>
-            <div class="quick-action-card" onclick="navigateTo('results_entry')">
-              <div class="quick-action-icon">✍</div>
-              <div class="quick-action-label">Result Marks</div>
-            </div>
-            <div class="quick-action-card" onclick="navigateTo('cbt_mgmt')">
-              <div class="quick-action-icon">💻</div>
-              <div class="quick-action-label">CBT Architect</div>
-            </div>
           </div>
         </div>
       </div>
@@ -1380,22 +1422,31 @@ function renderDashboardOverview() {
 
   // Student Dashboard
   if (p.role === "student") {
+    const myScores = (appState.studentScores || []).filter(s => s.studentUid === p.uid);
+    const myRecords = (appState.attendanceRecords || []).filter(r => r.studentUid === p.uid);
+    
+    let studentAttPercent = "100%";
+    if (myRecords.length > 0) {
+      const presents = myRecords.filter(r => r.status === "Present").length;
+      studentAttPercent = `${Math.round((presents / myRecords.length) * 100)}%`;
+    }
+
     return `
       <div class="dashboard-grid">
         <div class="stat-card">
           <div class="stat-card-header">CLASS ASSIGNED <span class="stat-card-icon">🏫</span></div>
-          <div class="stat-card-value">JSS 1A</div>
-          <div class="stat-card-trend trend-up">✦ Manager: Mrs. Grace Babalola</div>
+          <div class="stat-card-value">${p.studentClass || "JSS 1"}${p.arm || "A"}</div>
+          <div class="stat-card-trend trend-up">✦ Active school container</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">ATTENDANCE AVERAGE <span class="stat-card-icon">📅</span></div>
-          <div class="stat-card-value">100%</div>
-          <div class="stat-card-trend trend-up">✓ Perfect Record</div>
+          <div class="stat-card-value">${studentAttPercent}</div>
+          <div class="stat-card-trend trend-up">✓ Personal attendance card</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">COMPLETED QUIZZES <span class="stat-card-icon">💻</span></div>
-          <div class="stat-card-value">1</div>
-          <div class="stat-card-trend trend-up">✦ CBT Math Attempted</div>
+          <div class="stat-card-value">${myScores.length}</div>
+          <div class="stat-card-trend trend-up">✦ CBT exams graded</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-header">BEHAVIORAL MERITS <span class="stat-card-icon">🌟</span></div>
@@ -1413,12 +1464,12 @@ function renderDashboardOverview() {
             <div class="timeline-item">
               <div class="timeline-time">June 25, 2026</div>
               <div class="timeline-title">Leadership Merit Awarded</div>
-              <div class="timeline-desc">Mrs. Grace Babblog logged a conduct merit: "Organized the classroom library shelves beautifully."</div>
+              <div class="timeline-desc">Mrs. Grace Babalola logged a conduct merit: "Organized the classroom library shelves beautifully."</div>
             </div>
             <div class="timeline-item">
               <div class="timeline-time">June 20, 2026</div>
-              <div class="timeline-title">First Term Result Released</div>
-              <div class="timeline-desc">Academic report compiled and published for printing. Overall score class rank: 1st</div>
+              <div class="timeline-title">Academic Results Profile Updated</div>
+              <div class="timeline-desc">Academic report compiled and published in school database ledger.</div>
             </div>
           </div>
         </div>
@@ -2478,6 +2529,10 @@ function renderActiveCBTExamInterface() {
     `;
   }
 
+  const mins = Math.floor((appState.cbtTimeRemaining || 0) / 60);
+  const secs = (appState.cbtTimeRemaining || 0) % 60;
+  const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
   const q = questions[0]; // Active question
   return `
     <div class="cbt-container animate-fade-in">
@@ -2486,7 +2541,7 @@ function renderActiveCBTExamInterface() {
           <h3 style="font-weight: 800;">${exam.title || "Assessment"} Ongoing</h3>
           <p style="color: var(--text-muted); font-size: 0.8rem;">Anti-Cheating secure sandbox active.</p>
         </div>
-        <div class="cbt-timer" id="cbt-clock-val">${exam.duration || "10"}:00</div>
+        <div class="cbt-timer" id="cbt-clock-val">${timeStr}</div>
       </div>
       
       <div class="cbt-question-card">
@@ -2808,7 +2863,7 @@ function renderParentDashboard() {
 
 // Library Module
 function renderLibraryModule() {
-  const books = appState.libraryBooks || [];
+  const books = appState.libraryList || [];
   
   let rowsHtml = "";
   if (books.length === 0) {
@@ -2891,7 +2946,7 @@ function renderLibraryModule() {
 
 // Hostel Lodge
 function renderHostelModule() {
-  const hostels = appState.hostelAllocations || [];
+  const hostels = appState.hostelList || [];
   
   let rowsHtml = "";
   if (hostels.length === 0) {
@@ -2973,7 +3028,7 @@ function renderHostelModule() {
 
 // Transport
 function renderTransportModule() {
-  const routes = appState.transportRoutes || [];
+  const routes = appState.transportList || [];
   
   let rowsHtml = "";
   if (routes.length === 0) {
@@ -3676,12 +3731,44 @@ function initiateCBTAttempt(examId) {
     return;
   }
   appState.activeCbtExam = found;
+  appState.cbtTimeRemaining = (found.duration || 10) * 60;
+
+  if (appState.cbtTimerInterval) {
+    clearInterval(appState.cbtTimerInterval);
+  }
+
+  appState.cbtTimerInterval = setInterval(() => {
+    if (!appState.activeCbtExam) {
+      clearInterval(appState.cbtTimerInterval);
+      appState.cbtTimerInterval = null;
+      return;
+    }
+    appState.cbtTimeRemaining--;
+    const clockEl = document.getElementById("cbt-clock-val");
+    if (clockEl) {
+      const mins = Math.floor(appState.cbtTimeRemaining / 60);
+      const secs = appState.cbtTimeRemaining % 60;
+      clockEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    if (appState.cbtTimeRemaining <= 0) {
+      clearInterval(appState.cbtTimerInterval);
+      appState.cbtTimerInterval = null;
+      showToast("Time expired! Automatically submitting and marking quiz attempt...", "warning");
+      submitCBTExamAttempt();
+    }
+  }, 1000);
+
   showToast(`CBT Exam session initialized for ${found.title}`, "info");
   renderApp();
 }
 window.initiateCBTAttempt = initiateCBTAttempt;
 
 async function submitCBTExamAttempt() {
+  if (appState.cbtTimerInterval) {
+    clearInterval(appState.cbtTimerInterval);
+    appState.cbtTimerInterval = null;
+  }
+
   const exam = appState.activeCbtExam;
   if (!exam) return;
 
@@ -3906,7 +3993,7 @@ async function registerTransportRoute(event) {
   showToast("Compiling vehicle transit paths...", "info");
   try {
     const tId = `route_${Date.now()}`;
-    await setDoc(doc(db, "transport_routes", tId), {
+    await setDoc(doc(db, "vehicle_routes", tId), {
       id: tId,
       schoolId: sId,
       plateLicense,
