@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Simple, transparent pricing for Classarium. Plans for every school size — Basic, Professional, and Enterprise.">
+  <title>Pricing — Classarium</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .page-hero{padding:8rem 0 3rem;background:linear-gradient(135deg,var(--bg-primary),var(--bg-secondary));text-align:center}
+    .breadcrumb{display:flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;color:var(--text-secondary);margin-bottom:1rem}
+    .breadcrumb a{color:var(--primary);text-decoration:none}
+    .breadcrumb a:hover{text-decoration:underline}
+    .breadcrumb svg{width:14px;height:14px}
+    .page-hero h1{font-size:2.75rem;font-weight:800;margin-bottom:1rem}
+    .page-hero p{font-size:1.125rem;color:var(--text-secondary);max-width:600px;margin:0 auto}
+
+    /* Toggle */
+    .pricing-toggle-wrap{display:flex;align-items:center;justify-content:center;gap:1rem;margin:2.5rem 0 0}
+    .pricing-toggle-wrap span{font-size:.9rem;font-weight:600;color:var(--text-secondary)}
+    .pricing-toggle-wrap span.active-toggle{color:var(--text-primary)}
+    .toggle-switch{position:relative;width:52px;height:28px;cursor:pointer}
+    .toggle-switch input{display:none}
+    .toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:28px;transition:.3s}
+    .toggle-slider::before{content:'';position:absolute;width:22px;height:22px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+    .toggle-switch input:checked+.toggle-slider{background:var(--primary)}
+    .toggle-switch input:checked+.toggle-slider::before{transform:translateX(24px)}
+    .save-badge{display:inline-block;background:rgba(16,185,129,.12);color:#10b981;font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:99px;margin-left:.25rem}
+
+    /* Cards */
+    .pricing-section{padding:4rem 0 5rem}
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;max-width:1100px;margin:0 auto;padding:0 1.5rem}
+    .plan-card{background:var(--bg-primary);border:1px solid var(--border);border-radius:1.25rem;padding:2.5rem 2rem;position:relative;transition:transform .3s,box-shadow .3s}
+    .plan-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+    .plan-card.popular{border:2px solid var(--primary);box-shadow:0 0 0 1px var(--primary)}
+    .popular-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:.7rem;font-weight:700;padding:.3rem 1rem;border-radius:99px;text-transform:uppercase;letter-spacing:.05em}
+    .plan-name{font-size:1.05rem;font-weight:700;margin-bottom:.5rem}
+    .plan-price{margin-bottom:1.5rem}
+    .plan-price .currency{font-size:1.25rem;font-weight:700;vertical-align:top;margin-top:.3rem}
+    .plan-price .amount{font-size:3rem;font-weight:900;line-height:1}
+    .plan-price .period{font-size:.875rem;color:var(--text-secondary);margin-left:.25rem}
+    .plan-features{list-style:none;padding:0;margin:0 0 2rem}
+    .plan-features li{padding:.4rem 0;font-size:.9rem;color:var(--text-secondary);display:flex;align-items:flex-start;gap:.6rem}
+    .plan-features li svg{flex-shrink:0;margin-top:2px}
+    .plan-features li .check{color:var(--primary)}
+    .plan-features li .x{color:var(--text-tertiary,#999)}
+    .plan-card .btn{width:100%}
+
+    /* Comparison table */
+    .comparison-section{padding:0 0 5rem;background:var(--bg-secondary)}
+    .comparison-wrap{max-width:1100px;margin:0 auto;padding:4rem 1.5rem 0}
+    .comparison-wrap h2{text-align:center;font-size:2rem;font-weight:800;margin-bottom:.5rem}
+    .comparison-wrap>p{text-align:center;color:var(--text-secondary);margin-bottom:2.5rem}
+    .comp-table{width:100%;border-collapse:collapse;background:var(--bg-primary);border-radius:1rem;overflow:hidden;border:1px solid var(--border)}
+    .comp-table thead{background:var(--bg-secondary)}
+    .comp-table th,.comp-table td{padding:1rem 1.25rem;text-align:left;font-size:.875rem;border-bottom:1px solid var(--border)}
+    .comp-table th{text-align:center;font-weight:700}
+    .comp-table th:first-child{text-align:left}
+    .comp-table td{text-align:center}
+    .comp-table td:first-child{text-align:left;color:var(--text-secondary)}
+    .comp-table .feature-cat{font-weight:700;color:var(--text-primary);background:var(--bg-secondary);padding:.75rem 1.25rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+
+    .cta-section{text-align:center;padding:5rem 0}
+    .cta-section h2{font-size:2rem;font-weight:800;margin-bottom:1rem}
+    .cta-section p{color:var(--text-secondary);margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto}
+
+    @media(max-width:900px){.pricing-grid{grid-template-columns:1fr;max-width:420px}}
+    @media(max-width:768px){
+      .page-hero h1{font-size:2rem}
+      .comp-table{font-size:.8rem}
+      .comp-table th,.comp-table td{padding:.7rem .6rem}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <div class="logo-icon">C</div>
+        <span>Classarium</span>
+      </a>
+      <div class="navbar-nav" id="navLinks">
+        <a href="features.html">Features</a>
+        <a href="pricing.html" class="active">Pricing</a>
+        <a href="about.html">About</a>
+        <a href="blog.html">Blog</a>
+        <a href="#">Docs</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="navbar-actions">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        <a href="app.html" class="btn btn-ghost">Login</a>
+        <a href="app.html" class="btn btn-primary btn-sm">Get Started</a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="features.html">Features</a>
+    <a href="pricing.html" class="active">Pricing</a>
+    <a href="about.html">About</a>
+    <a href="blog.html">Blog</a>
+    <a href="#">Docs</a>
+    <a href="contact.html">Contact</a>
+    <div class="mobile-actions">
+      <a href="app.html" class="btn btn-outline">Login</a>
+      <a href="app.html" class="btn btn-primary">Get Started</a>
+    </div>
+  </div>
+
+  <!-- ========== HERO ========== -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <span>Pricing</span>
+      </div>
+      <h1>Simple, <span class="highlight">Transparent</span> Pricing</h1>
+      <p>No hidden fees. No surprises. Choose the plan that fits your school and scale as you grow.</p>
+      <div class="pricing-toggle-wrap">
+        <span class="active-toggle" id="monthlyLabel">Monthly</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="billingToggle">
+          <span class="toggle-slider"></span>
+        </label>
+        <span id="yearlyLabel">Yearly</span>
+        <span class="save-badge" id="saveBadge" style="display:none;">Save 17%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PLAN CARDS ========== -->
+  <section class="pricing-section">
+    <div class="pricing-grid">
+
+      <!-- Basic -->
+      <div class="plan-card">
+        <div class="plan-name">Basic</div>
+        <div class="plan-price">
+          <span class="currency">$</span><span class="amount" data-monthly="49" data-yearly="490">49</span>
+          <span class="period">/mo</span>
+        </div>
+        <ul class="plan-features">
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1 School</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 500 Students</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 10 Staff</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Attendance Tracking</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Result Processing</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Report Cards</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Email Support</li>
+        </ul>
+        <a href="app.html" class="btn btn-outline" style="width:100%">Get Started</a>
+      </div>
+
+      <!-- Professional -->
+      <div class="plan-card popular">
+        <div class="popular-badge">Most Popular</div>
+        <div class="plan-name">Professional</div>
+        <div class="plan-price">
+          <span class="currency">$</span><span class="amount" data-monthly="149" data-yearly="1490">149</span>
+          <span class="period">/mo</span>
+        </div>
+        <ul class="plan-features">
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1 School</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 2,000 Students</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Up to 50 Staff</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Everything in Basic</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> CBT Exams</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Real-time Chat</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> LMS</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Timetable Management</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Analytics Dashboard</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Priority Support</li>
+        </ul>
+        <a href="app.html" class="btn btn-primary" style="width:100%">Get Started</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">
+          <span class="amount" style="font-size:2rem">Custom</span>
+        </div>
+        <ul class="plan-features">
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited Schools</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Unlimited Students &amp; Staff</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Everything in Professional</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Custom Integrations</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Dedicated Account Manager</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 99.9% SLA</li>
+          <li><svg class="check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> On-premise Option</li>
+        </ul>
+        <a href="contact.html" class="btn btn-outline" style="width:100%">Contact Sales</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========== COMPARISON TABLE ========== -->
+  <section class="comparison-section">
+    <div class="comparison-wrap">
+      <h2>Feature Comparison</h2>
+      <p>See exactly what's included in each plan.</p>
+      <div style="overflow-x:auto;">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th style="min-width:180px">Feature</th>
+              <th>Basic</th>
+              <th>Professional</th>
+              <th>Enterprise</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="feature-cat"><td colspan="4">Academic</td></tr>
+            <tr><td>Student Management</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr><td>Staff Management</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr><td>Report Cards</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr class="feature-cat"><td colspan="4">Communication</td></tr>
+            <tr><td>Parent Portal</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr><td>Real-time Chat</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr class="feature-cat"><td colspan="4">Assessment</td></tr>
+            <tr><td>CBT Exams</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr><td>Question Bank</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr class="feature-cat"><td colspan="4">Operations</td></tr>
+            <tr><td>Timetable</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr><td>Library / Hostel / Transport</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr class="feature-cat"><td colspan="4">Administration</td></tr>
+            <tr><td>Analytics Dashboard</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr><td>Audit Logs</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr><td>Custom Integrations</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+            <tr><td>Dedicated Manager</td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td><td><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CTA ========== -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Not Sure Which Plan?</h2>
+      <p>Talk to our team and we'll help you find the perfect fit for your school.</p>
+      <a href="contact.html" class="btn btn-primary btn-lg">Talk to Sales</a>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <div class="footer-brand">
+            <div class="logo-icon">C</div>
+            <span>Classarium</span>
+          </div>
+          <p>The all-in-one school management platform built for modern education. Trusted by 500+ schools worldwide to streamline administration and empower learning.</p>
+          <div class="footer-socials">
+            <a href="#" class="footer-social-link" aria-label="Twitter"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+            <a href="#" class="footer-social-link" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+            <a href="#" class="footer-social-link" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+            <a href="#" class="footer-social-link" aria-label="GitHub"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="features.html">Features</a></li>
+            <li><a href="pricing.html">Pricing</a></li>
+            <li><a href="#">Integrations</a></li>
+            <li><a href="#">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="#">Help Center</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Cookie Policy</a></li>
+            <li><a href="#">Security</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Connect</h4>
+          <ul>
+            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="#">Support</a></li>
+            <li><a href="#">Partner Program</a></li>
+            <li><a href="#">Careers</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Classarium. All rights reserved.</p>
+        <div class="footer-bottom-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Sitemap</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    // Pricing toggle
+    const toggle = document.getElementById('billingToggle');
+    const amounts = document.querySelectorAll('.amount[data-monthly]');
+    const monthlyLabel = document.getElementById('monthlyLabel');
+    const yearlyLabel = document.getElementById('yearlyLabel');
+    const saveBadge = document.getElementById('saveBadge');
+
+    toggle.addEventListener('change', function () {
+      const isYearly = this.checked;
+      amounts.forEach(function (el) {
+        el.textContent = isYearly ? el.dataset.yearly : el.dataset.monthly;
+      });
+      const periodEls = document.querySelectorAll('.plan-price .period');
+      periodEls.forEach(function (el) {
+        el.textContent = isYearly ? '/yr' : '/mo';
+      });
+      monthlyLabel.classList.toggle('active-toggle', !isYearly);
+      yearlyLabel.classList.toggle('active-toggle', isYearly);
+      saveBadge.style.display = isYearly ? 'inline-block' : 'none';
+    });
+  </script>
+</body>
+</html>

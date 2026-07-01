@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Classarium frequently asked questions. Find answers about features, pricing, security, technical requirements, and more.">
+  <title>FAQ — Classarium</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .page-hero{padding:8rem 0 3rem;background:linear-gradient(135deg,var(--bg-primary),var(--bg-secondary));text-align:center}
+    .breadcrumb{display:flex;align-items:center;justify-content:center;gap:.5rem;font-size:.875rem;color:var(--text-secondary);margin-bottom:1rem}
+    .breadcrumb a{color:var(--primary);text-decoration:none}
+    .breadcrumb a:hover{text-decoration:underline}
+    .breadcrumb svg{width:14px;height:14px}
+    .page-hero h1{font-size:2.75rem;font-weight:800;margin-bottom:1rem}
+    .page-hero p{font-size:1.125rem;color:var(--text-secondary);max-width:600px;margin:0 auto}
+
+    /* FAQ Sections */
+    .faq-section{max-width:800px;margin:0 auto;padding:0 1.5rem}
+    .faq-category{margin-bottom:3rem}
+    .faq-category-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:2px solid var(--border)}
+    .faq-item{border:1px solid var(--border);border-radius:12px;margin-bottom:.75rem;overflow:hidden;transition:border-color .2s}
+    .faq-item.active{border-color:var(--primary)}
+    .faq-question{width:100%;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.25rem;background:var(--bg-primary);border:none;cursor:pointer;font-size:.95rem;font-weight:500;color:var(--text-primary);text-align:left;gap:1rem;transition:background .2s;font-family:inherit;line-height:1.5}
+    .faq-question:hover{background:var(--bg-secondary)}
+    .faq-question svg{flex-shrink:0;width:20px;height:20px;color:var(--text-secondary);transition:transform .3s}
+    .faq-item.active .faq-question svg{transform:rotate(180deg);color:var(--primary)}
+    .faq-answer{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .35s ease}
+    .faq-answer-inner{padding:0 1.25rem 1.25rem;color:var(--text-secondary);line-height:1.8;font-size:.925rem}
+    .faq-item.active .faq-answer{max-height:500px}
+    .faq-item.active .faq-answer-inner{padding-top:.25rem}
+
+    .faq-bottom-cta{text-align:center;max-width:600px;margin:2rem auto 5rem;padding:0 1.5rem}
+    .faq-bottom-cta h2{font-size:1.5rem;font-weight:700;margin-bottom:.75rem;color:var(--text-primary)}
+    .faq-bottom-cta p{color:var(--text-secondary);margin-bottom:1.5rem;line-height:1.7}
+
+    @media(max-width:768px){
+      .page-hero h1{font-size:2rem}
+      .faq-section{padding:0 1rem}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <div class="logo-icon">C</div>
+        <span>Classarium</span>
+      </a>
+      <div class="navbar-nav" id="navLinks">
+        <a href="features.html">Features</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="about.html">About</a>
+        <a href="blog.html">Blog</a>
+        <a href="docs.html">Docs</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="navbar-actions">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        <a href="app.html" class="btn btn-ghost">Login</a>
+        <a href="app.html" class="btn btn-primary btn-sm">Get Started</a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="features.html">Features</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="about.html">About</a>
+    <a href="blog.html">Blog</a>
+    <a href="docs.html">Docs</a>
+    <a href="contact.html">Contact</a>
+    <div class="mobile-actions">
+      <a href="app.html" class="btn btn-outline">Login</a>
+      <a href="app.html" class="btn btn-primary">Get Started</a>
+    </div>
+  </div>
+
+  <!-- ========== HERO ========== -->
+  <section class="page-hero">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="index.html">Home</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <span>FAQ</span>
+      </div>
+      <h1>Frequently Asked <span class="highlight">Questions</span></h1>
+      <p>Find answers to the most common questions about Classarium, our features, pricing, and more.</p>
+    </div>
+  </section>
+
+  <!-- ========== FAQ SECTIONS ========== -->
+  <div class="faq-section" style="padding-top:3rem;padding-bottom:2rem">
+
+    <!-- General -->
+    <div class="faq-category">
+      <h3 class="faq-category-title">General</h3>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          What is Classarium?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Classarium is a comprehensive, cloud-based school management platform designed to streamline the administrative and academic operations of educational institutions. It provides modules for student enrollment, attendance tracking, grade management, report card generation, computer-based testing (CBT), and staff administration — all accessible through a modern web interface.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          How does it work?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">After signing up, you configure your school's academic settings (grading system, terms, sessions), import your student and staff data via CSV or manual entry, and begin managing day-to-day operations. Teachers can record attendance and grades, administrators can generate reports, and parents can access student performance dashboards — all in real time.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Is Classarium cloud-based?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Yes, Classarium is fully cloud-based. There's no software to install or servers to maintain. You simply log in through your web browser from any device with an internet connection. All your data is securely stored and automatically backed up on our enterprise-grade cloud infrastructure hosted on AWS.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          What browsers are supported?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Classarium supports all modern, evergreen browsers including the latest two major versions of Google Chrome, Mozilla Firefox, Microsoft Edge, and Safari. We recommend keeping your browser updated to the latest version for the best experience and security. Internet Explorer is not supported.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="faq-category">
+      <h3 class="faq-category-title">Features</h3>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          What modules are available in Classarium?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Classarium includes Student Management, Staff Administration, Attendance Tracking, Result Processing & Grading, Report Card Generation, Computer-Based Testing (CBT), Class & Subject Management, Parent Portal, and Analytics & Reporting. Each module integrates seamlessly with the others for a unified school management experience.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Can I customize report card templates?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Absolutely. Classarium provides a flexible report card builder that lets you customize layouts, add your school logo, choose grading formats, include behavioral comments, and define position calculations. You can create multiple templates for different grade levels and export them as professional PDF documents ready for printing or digital distribution.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Is there a mobile app?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Classarium is a responsive web application that works beautifully on any mobile device through your browser. We also offer a dedicated mobile app for iOS and Android (currently in beta) that provides teachers with quick access to attendance marking, grade entry, and push notifications. The mobile app is available at no extra cost for Professional and Enterprise plans.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Does Classarium support Computer-Based Testing (CBT)?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Yes. Our CBT module allows you to create question banks with multiple question types (multiple choice, true/false, fill-in-the-blank, essay), schedule exams, set time limits, and randomize questions for each student. Results are automatically graded for objective questions and integrated with the result processing module for seamless grade computation.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing -->
+    <div class="faq-category">
+      <h3 class="faq-category-title">Pricing</h3>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Is there a free trial?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Yes, every new Classarium account comes with a free 14-day trial of the Professional plan with full access to all features. No credit card is required to start your trial. At the end of the trial period, you can choose to subscribe to any plan or downgrade to the limited free tier.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          What payment methods do you accept?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">We accept all major credit and debit cards (Visa, Mastercard, American Express, Discover) processed securely through Stripe. We also support bank transfers for annual Enterprise plans. For schools in Nigeria and other African countries, we offer local payment options including bank transfers and mobile money. Contact our sales team for region-specific payment arrangements.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Can I upgrade or downgrade my plan?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Yes, you can change your plan at any time from your account settings. When upgrading, the price difference is prorated for the remainder of your billing cycle. When downgrading, the new rate takes effect at the start of your next billing cycle. All your data is preserved when switching between plans.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          What happens if I cancel my subscription?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">When you cancel, your subscription remains active until the end of your current billing period. After that, your account reverts to a read-only mode where you can export all your data but cannot make changes. We retain your data for 90 days after cancellation, giving you ample time to export everything. After 90 days, data is permanently deleted in accordance with our retention policy.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="faq-category">
+      <h3 class="faq-category-title">Security</h3>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          How is my data protected?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Classarium employs a multi-layered security approach including encryption at rest (AES-256) and in transit (TLS 1.2+), role-based access controls, two-factor authentication, automated vulnerability scanning, and regular penetration testing by independent security firms. We maintain SOC 2 Type II compliance and undergo annual security audits to ensure the highest standards of data protection.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Is data encrypted?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Yes, all data is encrypted both in transit and at rest. Data transmitted between your browser and our servers is encrypted using TLS 1.2 or higher. All data stored in our databases and file storage is encrypted using AES-256 encryption. Database encryption keys are managed through AWS KMS with automatic rotation policies.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Where are your servers located?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Our primary infrastructure is hosted on Amazon Web Services (AWS) across multiple data centers in the United States (us-east-1, us-west-2) and the European Union (eu-west-1). Enterprise customers can request region-locked deployments to meet specific data residency requirements. All data centers feature redundant power, cooling, and networking for maximum reliability.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Do you backup my data?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Yes, we perform continuous automated backups with point-in-time recovery capability. Full backups are taken daily and retained for 30 days, with incremental backups occurring every 15 minutes. Backups are stored in geographically separate AWS regions to ensure disaster recovery. You can also create manual on-demand backups from your admin dashboard at any time.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technical -->
+    <div class="faq-category">
+      <h3 class="faq-category-title">Technical</h3>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          How do I get started with Classarium?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Getting started is simple: visit our signup page to create your administrator account, complete the school configuration wizard to set up your academic structure, import your student and staff data using our CSV import tool, and begin managing your school. The entire setup process typically takes under 30 minutes. Check our <a href="docs.html" style="color:var(--primary)">Documentation</a> for detailed step-by-step guides.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          What are the system requirements?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Classarium is a web-based platform, so there's no software to install. All you need is a modern web browser (Chrome, Firefox, Edge, or Safari) and a stable internet connection. We recommend a minimum internet speed of 5 Mbps for optimal performance. For CBT exams, we recommend using a dedicated computer lab with at least 2 GB RAM per workstation.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Is there an API available?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">Yes, Classarium provides a comprehensive RESTful API that allows you to integrate with external systems such as learning management systems, accounting software, and custom school applications. The API is available on Professional and Enterprise plans and includes endpoints for student management, grade operations, attendance, and report generation. Full API documentation is available in our <a href="docs.html" style="color:var(--primary)">Docs</a>.</div>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          How do I migrate data from another system?
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">We offer several migration options. For most schools, our CSV import tool handles bulk data transfer for students, staff, classes, and grades. For larger migrations from platforms like Edmodo, Google Classroom, or legacy systems, our Enterprise plan includes complimentary data migration assistance from our onboarding team. We also provide an API for programmatic data migration.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== BOTTOM CTA ========== -->
+  <div class="faq-bottom-cta">
+    <h2>Still Have Questions?</h2>
+    <p>Our support team is ready to help. Reach out and we'll get back to you within a few hours.</p>
+    <a href="contact.html" class="btn btn-primary">Contact Support</a>
+  </div>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <div class="footer-brand">
+            <div class="logo-icon">C</div>
+            <span>Classarium</span>
+          </div>
+          <p>The all-in-one school management platform built for modern education. Trusted by 500+ schools worldwide to streamline administration and empower learning.</p>
+          <div class="footer-socials">
+            <a href="#" class="footer-social-link" aria-label="Twitter"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+            <a href="#" class="footer-social-link" aria-label="LinkedIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+            <a href="#" class="footer-social-link" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+            <a href="#" class="footer-social-link" aria-label="GitHub"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+          </div>
+        </div>
+        <div class="footer-column">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="features.html">Features</a></li>
+            <li><a href="pricing.html">Pricing</a></li>
+            <li><a href="#">Integrations</a></li>
+            <li><a href="#">Changelog</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="docs.html">Documentation</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="blog.html">Blog</a></li>
+            <li><a href="help.html">Help Center</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="privacy.html">Privacy Policy</a></li>
+            <li><a href="terms.html">Terms of Service</a></li>
+            <li><a href="#">Cookie Policy</a></li>
+            <li><a href="#">Security</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4>Connect</h4>
+          <ul>
+            <li><a href="contact.html">Contact Us</a></li>
+            <li><a href="#">Support</a></li>
+            <li><a href="#">Partner Program</a></li>
+            <li><a href="#">Careers</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Classarium. All rights reserved.</p>
+        <div class="footer-bottom-links">
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+          <a href="#">Sitemap</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>

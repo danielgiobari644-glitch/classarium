@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classarium - School Management Platform</title>
+    <meta name="description" content="Enterprise-grade multi-tenant school management SaaS platform">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="themes.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="app.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+<body>
+    <!-- Auth Pages (shown when not logged in) -->
+    <div id="auth-container" style="display:none;">
+        <!-- Login Page -->
+        <div id="auth-login" class="auth-page" style="display:none;">
+            <div class="auth-container">
+                <div class="auth-left">
+                    <div class="auth-brand">
+                        <div class="auth-brand-logo">C</div>
+                        <span class="auth-brand-name">Classarium</span>
+                    </div>
+                    <h1 class="auth-heading">Welcome back</h1>
+                    <p class="auth-subtext">Sign in to your school management platform</p>
+                    <form id="login-form" class="auth-form">
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <div class="input-with-icon">
+                                <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+                                <input type="email" id="login-email" class="form-input" placeholder="you@school.com" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="input-with-icon">
+                                <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+                                <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required>
+                            </div>
+                        </div>
+                        <div class="form-row form-row-between">
+                            <label class="form-checkbox-label">
+                                <input type="checkbox" id="login-remember" class="form-checkbox">
+                                <span class="checkbox-custom"></span>
+                                <span>Remember me</span>
+                            </label>
+                            <a href="#" id="forgot-password-link" class="form-link">Forgot password?</a>
+                        </div>
+                        <div id="login-error" class="form-error" style="display:none;"></div>
+                        <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+                            <span class="btn-text">Sign In</span>
+                            <span class="btn-loading" style="display:none;"><span class="spinner"></span> Signing in...</span>
+                        </button>
+                    </form>
+                    <div class="auth-divider"><span>or continue with</span></div>
+                    <p class="auth-footer-text">Don't have an account? <a href="#" id="go-to-register">Create school account</a></p>
+                </div>
+                <div class="auth-right">
+                    <div class="auth-right-content">
+                        <div class="auth-illustration">
+                            <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="40" y="60" width="320" height="200" rx="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+                                <rect x="60" y="80" width="120" height="12" rx="6" fill="rgba(255,255,255,0.3)"/>
+                                <rect x="60" y="104" width="80" height="8" rx="4" fill="rgba(255,255,255,0.15)"/>
+                                <rect x="60" y="130" width="280" height="1" fill="rgba(255,255,255,0.1)"/>
+                                <circle cx="80" cy="160" r="16" fill="rgba(99,102,241,0.4)"/>
+                                <rect x="104" y="152" width="100" height="8" rx="4" fill="rgba(255,255,255,0.2)"/>
+                                <rect x="104" y="166" width="60" height="6" rx="3" fill="rgba(255,255,255,0.1)"/>
+                                <circle cx="80" cy="200" r="16" fill="rgba(6,182,212,0.4)"/>
+                                <rect x="104" y="192" width="120" height="8" rx="4" fill="rgba(255,255,255,0.2)"/>
+                                <rect x="104" y="206" width="80" height="6" rx="3" fill="rgba(255,255,255,0.1)"/>
+                                <rect x="60" y="236" width="280" height="1" fill="rgba(255,255,255,0.1)"/>
+                                <rect x="60" y="250" width="60" height="24" rx="6" fill="rgba(99,102,241,0.3)"/>
+                                <rect x="130" y="250" width="60" height="24" rx="6" fill="rgba(6,182,212,0.3)"/>
+                                <circle cx="200" cy="320" r="40" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+                                <path d="M185 320l10 10 20-20" stroke="rgba(99,102,241,0.6)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h2 class="auth-right-title">Manage your entire school in one place</h2>
+                        <p class="auth-right-text">From admissions to results, attendance to analytics — Classarium handles everything.</p>
+                        <div class="auth-features">
+                            <div class="auth-feature">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                <span>Real-time data sync</span>
+                            </div>
+                            <div class="auth-feature">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                <span>Bank-grade security</span>
+                            </div>
+                            <div class="auth-feature">
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                <span>Automated result processing</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Page -->
+        <div id="auth-register" class="auth-page" style="display:none;">
+            <div class="auth-container auth-container-wide">
+                <div class="auth-left auth-left-wide">
+                    <div class="auth-brand">
+                        <div class="auth-brand-logo">C</div>
+                        <span class="auth-brand-name">Classarium</span>
+                    </div>
+                    <h1 class="auth-heading">Create your school</h1>
+                    <p class="auth-subtext">Set up your school management workspace in minutes</p>
+                    <form id="register-form" class="auth-form">
+                        <div class="form-section-title">School Information</div>
+                        <div class="form-row form-row-2">
+                            <div class="form-group">
+                                <label class="form-label">School Name *</label>
+                                <input type="text" id="reg-school-name" class="form-input" placeholder="e.g. Greenfield Academy" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">School Motto</label>
+                                <input type="text" id="reg-school-motto" class="form-input" placeholder="e.g. Excellence in Education">
+                            </div>
+                        </div>
+                        <div class="form-row form-row-3">
+                            <div class="form-group">
+                                <label class="form-label">School Type *</label>
+                                <select id="reg-school-type" class="form-select" required>
+                                    <option value="">Select type</option>
+                                    <option value="primary">Primary School</option>
+                                    <option value="secondary">Secondary School</option>
+                                    <option value="tertiary">Tertiary Institution</option>
+                                    <option value="k12">K-12 School</option>
+                                    <option value="mixed">Mixed (Primary & Secondary)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Established Year</label>
+                                <input type="number" id="reg-year" class="form-input" placeholder="e.g. 2005" min="1900" max="2026">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Country *</label>
+                                <input type="text" id="reg-country" class="form-input" placeholder="e.g. Nigeria" required>
+                            </div>
+                        </div>
+                        <div class="form-row form-row-2">
+                            <div class="form-group">
+                                <label class="form-label">State</label>
+                                <input type="text" id="reg-state" class="form-input" placeholder="e.g. Lagos">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">City</label>
+                                <input type="text" id="reg-city" class="form-input" placeholder="e.g. Ikeja">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Address</label>
+                            <input type="text" id="reg-address" class="form-input" placeholder="Full school address">
+                        </div>
+                        <div class="form-row form-row-2">
+                            <div class="form-group">
+                                <label class="form-label">School Email</label>
+                                <input type="email" id="reg-school-email" class="form-input" placeholder="info@school.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">School Phone</label>
+                                <input type="tel" id="reg-phone" class="form-input" placeholder="+234 xxx xxx xxxx">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Website</label>
+                            <input type="url" id="reg-website" class="form-input" placeholder="https://www.school.com">
+                        </div>
+
+                        <div class="form-section-title">Admin Account</div>
+                        <div class="form-row form-row-2">
+                            <div class="form-group">
+                                <label class="form-label">Owner Full Name *</label>
+                                <input type="text" id="reg-owner-name" class="form-input" placeholder="John Doe" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Owner Email *</label>
+                                <input type="email" id="reg-owner-email" class="form-input" placeholder="admin@school.com" required>
+                            </div>
+                        </div>
+                        <div class="form-row form-row-2">
+                            <div class="form-group">
+                                <label class="form-label">Password *</label>
+                                <input type="password" id="reg-password" class="form-input" placeholder="Min 8 characters" required minlength="8">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Confirm Password *</label>
+                                <input type="password" id="reg-confirm-password" class="form-input" placeholder="Re-enter password" required>
+                            </div>
+                        </div>
+                        <label class="form-checkbox-label" style="margin-bottom: var(--space-4);">
+                            <input type="checkbox" id="reg-terms" class="form-checkbox" required>
+                            <span class="checkbox-custom"></span>
+                            <span>I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a></span>
+                        </label>
+                        <div id="register-error" class="form-error" style="display:none;"></div>
+                        <button type="submit" class="btn btn-primary btn-full" id="register-btn">
+                            <span class="btn-text">Create School Account</span>
+                            <span class="btn-loading" style="display:none;"><span class="spinner"></span> Creating...</span>
+                        </button>
+                    </form>
+                    <p class="auth-footer-text">Already have an account? <a href="#" id="go-to-login">Sign in</a></p>
+                </div>
+                <div class="auth-right">
+                    <div class="auth-right-content">
+                        <div class="auth-illustration">
+                            <svg viewBox="0 0 400 400" fill="none"><rect x="60" y="80" width="280" height="180" rx="12" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/><rect x="80" y="100" width="100" height="10" rx="5" fill="rgba(255,255,255,0.25)"/><rect x="80" y="120" width="240" height="6" rx="3" fill="rgba(255,255,255,0.1)"/><rect x="80" y="140" width="240" height="6" rx="3" fill="rgba(255,255,255,0.1)"/><circle cx="100" cy="180" r="12" fill="rgba(99,102,241,0.3)"/><rect x="120" y="174" width="80" height="6" rx="3" fill="rgba(255,255,255,0.2)"/><rect x="120" y="186" width="50" height="5" rx="2.5" fill="rgba(255,255,255,0.1)"/><circle cx="100" cy="210" r="12" fill="rgba(6,182,212,0.3)"/><rect x="120" y="204" width="90" height="6" rx="3" fill="rgba(255,255,255,0.2)"/><rect x="120" y="216" width="60" height="5" rx="2.5" fill="rgba(255,255,255,0.1)"/><rect x="80" y="240" width="240" height="1" fill="rgba(255,255,255,0.08)"/></svg>
+                        </div>
+                        <h2 class="auth-right-title">Start managing your school today</h2>
+                        <p class="auth-right-text">Join hundreds of schools already using Classarium to streamline operations.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Page -->
+        <div id="auth-forgot" class="auth-page" style="display:none;">
+            <div class="auth-container auth-container-narrow">
+                <div class="auth-left auth-left-full">
+                    <div class="auth-brand">
+                        <div class="auth-brand-logo">C</div>
+                        <span class="auth-brand-name">Classarium</span>
+                    </div>
+                    <h1 class="auth-heading">Reset your password</h1>
+                    <p class="auth-subtext">Enter your email and we'll send you a reset link</p>
+                    <form id="forgot-form" class="auth-form">
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="forgot-email" class="form-input" placeholder="you@school.com" required>
+                        </div>
+                        <div id="forgot-success" class="callout callout-success" style="display:none;">
+                            Password reset email sent. Check your inbox.
+                        </div>
+                        <div id="forgot-error" class="form-error" style="display:none;"></div>
+                        <button type="submit" class="btn btn-primary btn-full">Send Reset Link</button>
+                    </form>
+                    <p class="auth-footer-text"><a href="#" id="back-to-login">Back to sign in</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Verification Page -->
+        <div id="auth-verify" class="auth-page" style="display:none;">
+            <div class="auth-container auth-container-narrow">
+                <div class="auth-left auth-left-full" style="text-align:center;">
+                    <div class="auth-brand" style="justify-content:center;">
+                        <div class="auth-brand-logo">C</div>
+                        <span class="auth-brand-name">Classarium</span>
+                    </div>
+                    <div style="margin:var(--space-8) 0;">
+                        <div style="width:80px;height:80px;border-radius:50%;background:var(--color-primary-light);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-4);">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </div>
+                        <h1 class="auth-heading" style="text-align:center;">Verify your email</h1>
+                        <p class="auth-subtext" style="text-align:center;">We've sent a verification email to <strong id="verify-email-display"></strong>. Please check your inbox and click the verification link.</p>
+                        <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-top:var(--space-4);">Didn't receive the email? <button id="resend-verify" class="btn btn-ghost" style="font-size:inherit;">Resend</button></p>
+                        <p style="color:var(--text-tertiary);font-size:var(--text-xs);margin-top:var(--space-2);">You can close this page and sign in after verifying.</p>
+                    </div>
+                    <p class="auth-footer-text"><a href="#" id="verify-to-login">Back to sign in</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application (shown when logged in) -->
+    <div id="app-container" style="display:none;" class="app-container">
+        <!-- Sidebar Overlay (mobile) -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-logo">C</div>
+                <span class="sidebar-brand-name" id="sidebar-school-name">Classarium</span>
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <!-- Populated by JS based on role -->
+            </nav>
+            <div class="sidebar-collapse-btn" id="sidebar-collapse-btn" title="Toggle sidebar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <!-- Header -->
+            <header class="app-header">
+                <button class="mobile-menu-btn" id="mobile-menu-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="header-breadcrumb" id="header-breadcrumb">
+                    <span id="breadcrumb-current">Dashboard</span>
+                </div>
+                <div class="header-search">
+                    <svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" class="header-search-input" placeholder="Search anything..." id="global-search" autocomplete="off">
+                    <span class="header-search-kbd">Ctrl+K</span>
+                </div>
+                <div class="header-actions">
+                    <button class="header-action-btn" id="theme-toggle-btn" title="Toggle theme">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                    </button>
+                    <button class="header-action-btn" id="notification-btn" title="Notifications">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                        <span class="notification-dot" id="notification-dot" style="display:none;"></span>
+                    </button>
+                    <div class="header-profile" id="header-profile">
+                        <div class="avatar" id="header-avatar" style="width:32px;height:32px;font-size:12px;">A</div>
+                        <div class="header-profile-info" style="display:flex;flex-direction:column;">
+                            <span class="header-profile-name" id="header-profile-name">Admin</span>
+                            <span class="header-profile-role" id="header-profile-role">School Admin</span>
+                        </div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content" id="page-content">
+                <!-- Page views rendered by router -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Command Palette -->
+    <div id="command-palette" class="command-palette" style="display:none;">
+        <div class="command-palette-overlay" id="command-palette-overlay"></div>
+        <div class="command-palette-container">
+            <div class="command-palette-input-wrapper">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="command-palette-input" id="command-palette-input" placeholder="Type a command or search...">
+                <span class="kbd">ESC</span>
+            </div>
+            <div class="command-palette-results" id="command-palette-results">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal Container -->
+    <div id="modal-container"></div>
+
+    <!-- Profile Dropdown -->
+    <div id="profile-dropdown" class="dropdown-menu" style="display:none;position:fixed;z-index:var(--z-popover);min-width:200px;">
+        <div style="padding:var(--space-3);border-bottom:1px solid var(--border-color);">
+            <div style="font-size:var(--text-sm);font-weight:var(--weight-semibold);color:var(--text-primary);" id="dropdown-name">Admin</div>
+            <div style="font-size:var(--text-xs);color:var(--text-tertiary);" id="dropdown-email">admin@school.com</div>
+        </div>
+        <div style="padding:var(--space-1);">
+            <a href="#" class="dropdown-item" data-action="profile">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                My Profile
+            </a>
+            <a href="#" class="dropdown-item" data-action="settings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                Settings
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item" data-action="logout" style="color:var(--color-danger);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign Out
+            </a>
+        </div>
+    </div>
+
+    <!-- Notification Panel -->
+    <div id="notification-panel" class="dropdown-menu" style="display:none;position:fixed;z-index:var(--z-popover);width:360px;max-height:480px;overflow-y:auto;">
+        <div style="padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:var(--weight-semibold);font-size:var(--text-sm);">Notifications</span>
+            <button class="btn btn-ghost btn-sm" id="mark-all-read">Mark all read</button>
+        </div>
+        <div id="notification-list" style="padding:var(--space-2);">
+            <div class="empty-state" style="padding:var(--space-8) var(--space-4);">
+                <div class="empty-state-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                </div>
+                <p style="font-size:var(--text-sm);color:var(--text-tertiary);text-align:center;">No notifications yet</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <!-- App Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="helpers.js"></script>
+    <script src="permissions.js"></script>
+    <script src="toast.js"></script>
+    <script src="modal.js"></script>
+    <script src="command-palette.js"></script>
+    <script src="sidebar.js"></script>
+    <script src="header.js"></script>
+    <script src="auth-service.js"></script>
+    <script src="data-service.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="schools.js"></script>
+    <script src="students.js"></script>
+    <script src="staff.js"></script>
+    <script src="academic.js"></script>
+    <script src="attendance.js"></script>
+    <script src="results.js"></script>
+    <script src="communication.js"></script>
+    <script src="timetable.js"></script>
+    <script src="assignments.js"></script>
+    <script src="cbt.js"></script>
+    <script src="behavior.js"></script>
+    <script src="discipline.js"></script>
+    <script src="library.js"></script>
+    <script src="hostel.js"></script>
+    <script src="transport.js"></script>
+    <script src="medical.js"></script>
+    <script src="analytics.js"></script>
+    <script src="settings.js"></script>
+    <script src="setup-wizard.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
